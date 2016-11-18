@@ -45,11 +45,54 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	__webpack_require__(1);
-	module.exports = __webpack_require__(2);
+	__webpack_require__(5);
+	module.exports = __webpack_require__(6);
 
 
 /***/ },
 /* 1 */
+/***/ function(module, exports, __webpack_require__) {
+
+	/* WEBPACK VAR INJECTION */(function(__dirname) {'use strict';
+
+	var express = __webpack_require__(2);
+	var path = __webpack_require__(3);
+	var fs = __webpack_require__(4);
+	var app = express();
+
+	app.use(express.static(__dirname + '/public'));
+
+	module.exports = function (app) {
+	  //  Routes  //
+
+
+	  app.get('/', function (req, res) {
+	    console.log('routes working');
+	    res.sendFile(process.cwd() + '/public/views/index.html');
+	  });
+	};
+	/* WEBPACK VAR INJECTION */}.call(exports, "/"))
+
+/***/ },
+/* 2 */
+/***/ function(module, exports) {
+
+	module.exports = require("express");
+
+/***/ },
+/* 3 */
+/***/ function(module, exports) {
+
+	module.exports = require("path");
+
+/***/ },
+/* 4 */
+/***/ function(module, exports) {
+
+	module.exports = require("fs");
+
+/***/ },
+/* 5 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -57,42 +100,47 @@
 	console.log('hello');
 
 /***/ },
-/* 2 */
+/* 6 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var request = __webpack_require__(3);
-	var cheerio = __webpack_require__(4);
-	var express = __webpack_require__(5);
-	var path = __webpack_require__(6);
-	var fs = __webpack_require__(7);
+	var request = __webpack_require__(7);
+	var cheerio = __webpack_require__(8);
+	var express = __webpack_require__(2);
+	var path = __webpack_require__(3);
+	var fs = __webpack_require__(4);
 	var app = express();
+	__webpack_require__(1)(app);
 
 	var getCardImages = function getCardImages(url) {
 	  console.log('Running GCI');
 	  return new Promise(function (resolve, reject) {
-	    return request(url, function (error, response, body) {
+	    return request(url, function (error, res, body) {
 	      if (error) {
 	        reject(console.log("Error: " + error));
 	      }
-	      console.log("Status code: " + response.statusCode);
+	      console.log("Status code: " + res.statusCode);
 
 	      var $ = cheerio.load(body);
 	      var imageArray = [];
 
 	      $('div#siteTable > div.link').each(function (index) {
-	        var image = $(this).find('p.title > a.title').attr('href');
-	        var redditImage = $(this).find('div.res-expando-box > a.res-expando-link').attr('href');
+	        var image = $(this).attr('data-url');
 	        var title = $(this).find('p.title').text().trim();
 	        var score = $(this).find('div.score.unvoted').text().trim();
 	        var user = $(this).find('a.author').text().trim();
-	        var object = { image: image, redditImage: redditImage, title: title, score: score, user: user };
-	        imageArray.push(object);
+	        var thread = { image: image, title: title, score: score, user: user };
+	        imageArray.push(thread);
 	      });
 	      console.log(imageArray);
-	      imageArray.forEach(function (object, index, arr) {
-	        var img = object.image;
+	      imageArray.forEach(function (thread, index, arr) {
+	        var img = thread.image;
+	        if (img.indexOf('/a/') >= 0) {
+	          console.log(arr[index]);
+	          arr.splice(index, 1);
+	          return;
+	        };
 	        if (img.indexOf('i.imgur' === -1) && img.indexOf('imgur') > -1) {
 	          var code = img.substr(img.lastIndexOf('/'));
 	          var base = 'http://i.imgur.com';
@@ -107,61 +155,36 @@
 	  });
 	};
 
-	//app.use(express.static('views'));
-
-	//  Routes  //
-
-	app.get('/', function (request, response) {
+	app.get('/cards', function (req, res) {
 	  getCardImages("https://www.reddit.com/r/customhearthstone").then(function (result) {
 	    console.log("Success - THEN", result);
-	    response.set('Content-Type', 'text/html');
+	    res.set('Content-Type', 'text/html');
 	    result.forEach(function (val) {
-	      return response.write("<img width='150' alt='" + val.title + "' src='" + val.image + "'/>");
+	      return res.write("<img width='150' alt='" + val.title + "' src='" + val.image + "'/>");
 	    });
-	    response.write("<img width='150' src='https://i.redd.it/tfsak3ixxdyx.png' />");
-	    response.send();
-	  }).then(function () {
-	    console.log('Derek');
-	    //response.render('./views/index.html');
+	    res.write("<img width='150' src='https://i.redd.it/tfsak3ixxdyx.png' />");
+	    res.end();
 	  });
 	});
 
 	app.get('/top', function (req, res) {
-	  //res.render('/views/index.html');
 	  getCardImages("https://www.reddit.com/r/customhearthstone/top/?sort=top&t=day");
+	  res.end();
 	});
 
 	app.listen(4321);
 
 /***/ },
-/* 3 */
+/* 7 */
 /***/ function(module, exports) {
 
 	module.exports = require("request");
 
 /***/ },
-/* 4 */
+/* 8 */
 /***/ function(module, exports) {
 
 	module.exports = require("cheerio");
-
-/***/ },
-/* 5 */
-/***/ function(module, exports) {
-
-	module.exports = require("express");
-
-/***/ },
-/* 6 */
-/***/ function(module, exports) {
-
-	module.exports = require("path");
-
-/***/ },
-/* 7 */
-/***/ function(module, exports) {
-
-	module.exports = require("fs");
 
 /***/ }
 /******/ ]);

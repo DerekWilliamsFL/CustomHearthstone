@@ -9,7 +9,7 @@
     ]
   },
   "scripts": {
-    "test": "node dist/bundle.js"
+    "test": "node public/js/bundle.js"
   },
   "author": "Derek Williams",
   "license": "ISC",
