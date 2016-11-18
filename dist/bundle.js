@@ -65,10 +65,12 @@
 	var request = __webpack_require__(3);
 	var cheerio = __webpack_require__(4);
 	var express = __webpack_require__(5);
-	var fs = __webpack_require__(6);
+	var path = __webpack_require__(6);
+	var fs = __webpack_require__(7);
 	var app = express();
 
 	var getCardImages = function getCardImages(url) {
+	  console.log('Running GCI');
 	  return new Promise(function (resolve, reject) {
 	    return request(url, function (error, response, body) {
 	      if (error) {
@@ -80,17 +82,24 @@
 	      var imageArray = [];
 
 	      $('div#siteTable > div.link').each(function (index) {
-	        //var title = $(this).find('p.title > a.title').text().trim();
 	        var image = $(this).find('p.title > a.title').attr('href');
-	        if (image.indexOf('imgur') >= 0) {
-	          var score = $(this).find('div.score.unvoted').text().trim();
-	          var user = $(this).find('a.author').text().trim();
-
-	          /*console.log("Title: " + title);
-	          console.log("Score: " + score);
-	          console.log("User: " + user);
-	          console.log("Image: " + image + '\n');*/
-	          imageArray.push(image);
+	        var redditImage = $(this).find('div.res-expando-box > a.res-expando-link').attr('href');
+	        var title = $(this).find('p.title').text().trim();
+	        var score = $(this).find('div.score.unvoted').text().trim();
+	        var user = $(this).find('a.author').text().trim();
+	        var object = { image: image, redditImage: redditImage, title: title, score: score, user: user };
+	        imageArray.push(object);
+	      });
+	      console.log(imageArray);
+	      imageArray.forEach(function (object, index, arr) {
+	        var img = object.image;
+	        if (img.indexOf('i.imgur' === -1) && img.indexOf('imgur') > -1) {
+	          var code = img.substr(img.lastIndexOf('/'));
+	          var base = 'http://i.imgur.com';
+	          var png = '.png';
+	          if (code.indexOf('png') === -1) {
+	            arr[index].image = '' + base + code + png;
+	          }
 	        }
 	      });
 	      resolve(imageArray);
@@ -98,27 +107,31 @@
 	  });
 	};
 
+	//app.use(express.static('views'));
+
 	//  Routes  //
 
 	app.get('/', function (request, response) {
-	  //response.write('Loading');
 	  getCardImages("https://www.reddit.com/r/customhearthstone").then(function (result) {
-	    console.log("Success - THEN", result[0]);
+	    console.log("Success - THEN", result);
 	    response.set('Content-Type', 'text/html');
-	    response.send("<img src='i.imgur.com/NA80Nfc.png'/>");
-	    //response.end();
+	    result.forEach(function (val) {
+	      return response.write("<img width='150' alt='" + val.title + "' src='" + val.image + "'/>");
+	    });
+	    response.write("<img width='150' src='https://i.redd.it/tfsak3ixxdyx.png' />");
+	    response.send();
+	  }).then(function () {
+	    console.log('Derek');
+	    //response.render('./views/index.html');
 	  });
-
-	  /*.catch( 
-	    console.log("Failed")
-	  );*/
 	});
 
 	app.get('/top', function (req, res) {
-	  return getCardImages("https://www.reddit.com/r/customhearthstone/top/?sort=top&t=day");
+	  //res.render('/views/index.html');
+	  getCardImages("https://www.reddit.com/r/customhearthstone/top/?sort=top&t=day");
 	});
 
-	app.listen(6587);
+	app.listen(4321);
 
 /***/ },
 /* 3 */
@@ -140,6 +153,12 @@
 
 /***/ },
 /* 6 */
+/***/ function(module, exports) {
+
+	module.exports = require("path");
+
+/***/ },
+/* 7 */
 /***/ function(module, exports) {
 
 	module.exports = require("fs");
