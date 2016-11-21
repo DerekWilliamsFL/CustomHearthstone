@@ -53,7 +53,7 @@
 /* 1 */
 /***/ function(module, exports, __webpack_require__) {
 
-	'use strict';
+	/* WEBPACK VAR INJECTION */(function(__filename, __dirname) {'use strict';
 
 	var express = __webpack_require__(2);
 	var path = __webpack_require__(3);
@@ -62,12 +62,13 @@
 	module.exports = function (app) {
 	  //  Routes  //
 
-
 	  app.get('/', function (req, res) {
-	    console.log('routes working');
 	    res.sendFile(process.cwd() + '/public/views/index.html');
+	    console.log(__filename);
+	    console.log(__dirname);
 	  });
 	};
+	/* WEBPACK VAR INJECTION */}.call(exports, "/index.js", "/"))
 
 /***/ },
 /* 2 */
@@ -210,14 +211,28 @@
 	'use strict';
 
 	var mongoose = __webpack_require__(9);
+	var crypto = __webpack_require__(11);
 
 	var UserSchema = new mongoose.Schema({
-	  username: { type: String, required: true, index: { unique: true } },
-	  password: { type: String, required: true },
+	  username: { type: String, lowercase: true, required: true, unique: true },
+	  hash: String,
+	  salt: String,
 	  favorites: []
 	});
 
 	mongoose.model('User', UserSchema);
+
+	UserSchema.methods.setPassword = function (password) {
+	  undefined.salt = crypto.randomBytes(16).toString('hex');
+
+	  undefined.hash = crypto.pbkdf2Sync(password, undefined.salt, 1000, 64).toString('hex');
+	};
+
+/***/ },
+/* 11 */
+/***/ function(module, exports) {
+
+	module.exports = require("crypto");
 
 /***/ }
 /******/ ]);
