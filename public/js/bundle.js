@@ -53,15 +53,12 @@
 /* 1 */
 /***/ function(module, exports, __webpack_require__) {
 
-	/* WEBPACK VAR INJECTION */(function(__dirname) {'use strict';
+	'use strict';
 
 	var express = __webpack_require__(2);
 	var path = __webpack_require__(3);
 	var fs = __webpack_require__(4);
 	var app = express();
-
-	app.use(express.static(__dirname + '/public'));
-
 	module.exports = function (app) {
 	  //  Routes  //
 
@@ -71,7 +68,6 @@
 	    res.sendFile(process.cwd() + '/public/views/index.html');
 	  });
 	};
-	/* WEBPACK VAR INJECTION */}.call(exports, "/"))
 
 /***/ },
 /* 2 */
@@ -95,9 +91,10 @@
 /* 5 */
 /***/ function(module, exports) {
 
-	'use strict';
+	/* WEBPACK VAR INJECTION */(function(__dirname) {"use strict";
 
-	console.log('hello');
+	console.log(__dirname);
+	/* WEBPACK VAR INJECTION */}.call(exports, "/"))
 
 /***/ },
 /* 6 */
@@ -110,8 +107,18 @@
 	var express = __webpack_require__(2);
 	var path = __webpack_require__(3);
 	var fs = __webpack_require__(4);
+	var mongoose = __webpack_require__(9);
+
+	mongoose.connect('mongodb://localhost/test', function (err) {
+	  if (!err) {
+	    console.log('Connected');
+	  };
+	});
+
 	var app = express();
 	__webpack_require__(1)(app);
+	__webpack_require__(10);
+	app.use(express.static(process.cwd() + '/public'));
 
 	var getCardImages = function getCardImages(url) {
 	  console.log('Running GCI');
@@ -120,27 +127,27 @@
 	      if (error) {
 	        reject(console.log("Error: " + error));
 	      }
-	      console.log("Status code: " + res.statusCode);
 
 	      var $ = cheerio.load(body);
 	      var imageArray = [];
 
 	      $('div#siteTable > div.link').each(function (index) {
-	        var image = $(this).attr('data-url');
-	        var title = $(this).find('p.title').text().trim();
-	        var score = $(this).find('div.score.unvoted').text().trim();
-	        var user = $(this).find('a.author').text().trim();
-	        var thread = { image: image, title: title, score: score, user: user };
+	        var image = $(undefined).attr('data-url');
+	        var title = $(undefined).find('p.title').text().trim();
+	        var score = $(undefined).find('div.score.unvoted').text().trim();
+	        var user = $(undefined).find('a.author').text().trim();
+	        var link = $(undefined).find('a.comments').attr('href');
+	        var thread = { image: image, title: title, score: score, user: user, link: link };
 	        imageArray.push(thread);
 	      });
-	      console.log(imageArray);
+
 	      imageArray.forEach(function (thread, index, arr) {
 	        var img = thread.image;
 	        if (img.indexOf('/a/') >= 0) {
-	          console.log(arr[index]);
 	          arr.splice(index, 1);
 	          return;
 	        };
+
 	        if (img.indexOf('i.imgur' === -1) && img.indexOf('imgur') > -1) {
 	          var code = img.substr(img.lastIndexOf('/'));
 	          var base = 'http://i.imgur.com';
@@ -157,18 +164,22 @@
 
 	app.get('/cards', function (req, res) {
 	  getCardImages("https://www.reddit.com/r/customhearthstone").then(function (result) {
-	    console.log("Success - THEN", result);
+	    console.log(result);
 	    res.set('Content-Type', 'text/html');
 	    result.forEach(function (val) {
-	      return res.write("<img width='150' alt='" + val.title + "' src='" + val.image + "'/>");
+	      return res.write('<a href=\'' + val.link + '\'>\n      <img width=\'150\' alt=\'' + val.title + '\' src=\'' + val.image + '\'/>\n    </a>');
 	    });
-	    res.write("<img width='150' src='https://i.redd.it/tfsak3ixxdyx.png' />");
 	    res.end();
 	  });
 	});
 
-	app.get('/top', function (req, res) {
+	/*app.get('/top', (req, res) => {
 	  getCardImages("https://www.reddit.com/r/customhearthstone/top/?sort=top&t=day");
+	  res.end();
+	});*/
+
+	app.get('/login', function (req, res) {
+
 	  res.end();
 	});
 
@@ -185,6 +196,28 @@
 /***/ function(module, exports) {
 
 	module.exports = require("cheerio");
+
+/***/ },
+/* 9 */
+/***/ function(module, exports) {
+
+	module.exports = require("mongoose");
+
+/***/ },
+/* 10 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	var mongoose = __webpack_require__(9);
+
+	var UserSchema = new mongoose.Schema({
+	  username: { type: String, required: true, index: { unique: true } },
+	  password: { type: String, required: true },
+	  favorites: []
+	});
+
+	mongoose.model('User', UserSchema);
 
 /***/ }
 /******/ ]);

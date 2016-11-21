@@ -3,8 +3,18 @@ const cheerio = require('cheerio');
 const express = require('express');
 const path = require('path');
 const fs = require('fs');
+const mongoose = require('mongoose');
+
+mongoose.connect('mongodb://localhost/test', (err) => {
+  if (!err) {
+    console.log('Connected');
+  };
+});
+
 const app = express();
-require('./routes.js')(app);
+require('./routes')(app);
+require('./models/User');
+app.use(express.static(process.cwd() + '/public'));
 
 
 
@@ -15,27 +25,27 @@ const getCardImages = (url) => {
       if(error) {
         reject(console.log("Error: " + error));
       }
-      console.log("Status code: " + res.statusCode);
 
       const $ = cheerio.load(body);
       const imageArray = [];
 
-      $('div#siteTable > div.link').each(function( index ) {
+      $('div#siteTable > div.link').each( ( index ) => {
         let image = $(this).attr('data-url');
         let title = $(this).find('p.title').text().trim();
         let score = $(this).find('div.score.unvoted').text().trim();
         let user = $(this).find('a.author').text().trim();
-        let thread = {image, title, score, user};
+        let link = $(this).find('a.comments').attr('href');
+        let thread = {image, title, score, user, link};
         imageArray.push(thread);
       });
-      console.log(imageArray);
-      imageArray.forEach(function(thread, index, arr){
+      
+      imageArray.forEach( (thread, index, arr) => {
         let img = thread.image;
         if (img.indexOf('/a/') >= 0) {
-          console.log(arr[index]);
           arr.splice(index, 1);
           return;
         };
+
         if(img.indexOf('i.imgur' === -1 ) && (img.indexOf('imgur') > -1)){
           let code = img.substr(img.lastIndexOf('/'));
           let base = 'http://i.imgur.com';
@@ -55,18 +65,26 @@ const getCardImages = (url) => {
 app.get('/cards', (req, res) => {
   getCardImages("https://www.reddit.com/r/customhearthstone")
   .then(result => {
-    console.log("Success - THEN", result);
+    console.log(result);
     res.set('Content-Type', 'text/html');
-    result.forEach(val => res.write("<img width='150' alt='" + val.title + "' src='" + val.image + "'/>"));
-    res.write("<img width='150' src='https://i.redd.it/tfsak3ixxdyx.png' />");
+    result.forEach(val => res.write(
+    `<a href='${val.link}'>
+      <img width='150' alt='${val.title}' src='${val.image}'/>
+    </a>`
+    ));
     res.end();
   });
 });
 
 
 
-app.get('/top', (req, res) => {
+/*app.get('/top', (req, res) => {
   getCardImages("https://www.reddit.com/r/customhearthstone/top/?sort=top&t=day");
+  res.end();
+});*/
+
+app.get('/login', (req, res) => {
+
   res.end();
 });
 
