@@ -53,7 +53,7 @@
 /* 1 */
 /***/ function(module, exports, __webpack_require__) {
 
-	/* WEBPACK VAR INJECTION */(function(__filename, __dirname) {'use strict';
+	'use strict';
 
 	var express = __webpack_require__(2);
 	var path = __webpack_require__(3);
@@ -62,13 +62,12 @@
 	module.exports = function (app) {
 	  //  Routes  //
 
+
 	  app.get('/', function (req, res) {
+	    console.log('routes working');
 	    res.sendFile(process.cwd() + '/public/views/index.html');
-	    console.log(__filename);
-	    console.log(__dirname);
 	  });
 	};
-	/* WEBPACK VAR INJECTION */}.call(exports, "/index.js", "/"))
 
 /***/ },
 /* 2 */
