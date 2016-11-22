@@ -3,6 +3,8 @@ const cheerio = require('cheerio');
 const express = require('express');
 const path = require('path');
 const fs = require('fs');
+const snoowrap = require('./credentials');
+const reddit = snoowrap.reddit;
 const mongoose = require('mongoose');
 
 mongoose.connect('mongodb://localhost/test', (err) => {
@@ -17,10 +19,9 @@ require('./models/User');
 app.use(express.static(process.cwd() + '/public'));
 
 
-
 const getCardImages = (url) => {
   console.log('Running GCI');
-  return new Promise( (resolve, reject) =>
+  /*return new Promise( (resolve, reject) =>
     request(url, (error, res, body) => {
       if(error) {
         reject(console.log("Error: " + error));
@@ -29,6 +30,7 @@ const getCardImages = (url) => {
       const $ = cheerio.load(body);
       const imageArray = [];
 
+      
       $('div#siteTable > div.link').each( ( index ) => {
         let image = $(this).attr('data-url');
         let title = $(this).find('p.title').text().trim();
@@ -42,8 +44,7 @@ const getCardImages = (url) => {
       imageArray.forEach( (thread, index, arr) => {
         let img = thread.image;
         if (img.indexOf('/a/') >= 0) {
-          arr.splice(index, 1);
-          return;
+          return arr.splice(index, 1);
         };
 
         if(img.indexOf('i.imgur' === -1 ) && (img.indexOf('imgur') > -1)){
@@ -57,14 +58,15 @@ const getCardImages = (url) => {
       });
       resolve(imageArray);
     })
-  );
+  );*/
+  reddit.getHot().map(post => post.title).then(console.log);
 }
 
 
 
 app.get('/cards', (req, res) => {
   getCardImages("https://www.reddit.com/r/customhearthstone")
-  .then(result => {
+  /*.then(result => {
     console.log(result);
     res.set('Content-Type', 'text/html');
     result.forEach(val => res.write(
@@ -72,8 +74,8 @@ app.get('/cards', (req, res) => {
       <img width='150' alt='${val.title}' src='${val.image}'/>
     </a>`
     ));
+  });*/
     res.end();
-  });
 });
 
 
