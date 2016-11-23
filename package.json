@@ -1,7 +1,7 @@
 {
-  "name": "customhsvisualizer",
+  "name": "vfefd",
   "version": "1.0.0",
-  "description": "Web interface for /r/CustomHearthstone",
+  "description": "Web interface for /r/",
   "main": "index.js",
   "babel": {
     "presets": [
@@ -11,7 +11,7 @@
   "scripts": {
     "test": "node public/js/bundle.js"
   },
-  "author": "Derek Williams",
+  "author": "Derek ",
   "license": "ISC",
   "devDependencies": {
     "babel-cli": "^6.18.0",

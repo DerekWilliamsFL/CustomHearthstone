@@ -21,25 +21,30 @@ app.use(express.static(process.cwd() + '/public'));
 
 const getCardImages = (url) => {
   console.log('Running GCI');
-  /*return new Promise( (resolve, reject) =>
+  return new Promise( (resolve, reject) =>
     request(url, (error, res, body) => {
       if(error) {
         reject(console.log("Error: " + error));
       }
+      else { console.log('No Error') }
 
       const $ = cheerio.load(body);
       const imageArray = [];
 
       
-      $('div#siteTable > div.link').each( ( index ) => {
+      $('div#siteTable > div.link').each( ( i, index ) => {
         let image = $(this).attr('data-url');
         let title = $(this).find('p.title').text().trim();
         let score = $(this).find('div.score.unvoted').text().trim();
         let user = $(this).find('a.author').text().trim();
-        let link = $(this).find('a.comments').attr('href');
+        let link = $(this).find('p.title').text().trim();
         let thread = {image, title, score, user, link};
         imageArray.push(thread);
+        console.log(thread);
+        return i < 5;
       });
+
+      console.log($(this));
       
       imageArray.forEach( (thread, index, arr) => {
         let img = thread.image;
@@ -58,15 +63,15 @@ const getCardImages = (url) => {
       });
       resolve(imageArray);
     })
-  );*/
-  reddit.getHot().map(post => post.title).then(console.log);
+  );
+ // reddit.getHot().map(post => post.title).then(console.log);
 }
 
 
 
 app.get('/cards', (req, res) => {
   getCardImages("https://www.reddit.com/r/customhearthstone")
-  /*.then(result => {
+  .then(result => {
     console.log(result);
     res.set('Content-Type', 'text/html');
     result.forEach(val => res.write(
@@ -74,7 +79,7 @@ app.get('/cards', (req, res) => {
       <img width='150' alt='${val.title}' src='${val.image}'/>
     </a>`
     ));
-  });*/
+  });
     res.end();
 });
 
