@@ -45,8 +45,7 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	__webpack_require__(1);
-	__webpack_require__(5);
-	module.exports = __webpack_require__(6);
+	module.exports = __webpack_require__(5);
 
 
 /***/ },
@@ -89,27 +88,18 @@
 
 /***/ },
 /* 5 */
-/***/ function(module, exports) {
-
-	/* WEBPACK VAR INJECTION */(function(__dirname) {"use strict";
-
-	console.log(__dirname);
-	/* WEBPACK VAR INJECTION */}.call(exports, "/"))
-
-/***/ },
-/* 6 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var request = __webpack_require__(7);
-	var cheerio = __webpack_require__(8);
+	var request = __webpack_require__(6);
+	var cheerio = __webpack_require__(7);
 	var express = __webpack_require__(2);
 	var path = __webpack_require__(3);
 	var fs = __webpack_require__(4);
-	var snoowrap = __webpack_require__(!(function webpackMissingModule() { var e = new Error("Cannot find module \"./credentials\""); e.code = 'MODULE_NOT_FOUND'; throw e; }()));
+	var snoowrap = __webpack_require__(8);
 	var reddit = snoowrap.reddit;
-	var mongoose = __webpack_require__(9);
+	var mongoose = __webpack_require__(10);
 
 	mongoose.connect('mongodb://localhost/test', function (err) {
 	  if (!err) {
@@ -119,7 +109,7 @@
 
 	var app = express();
 	__webpack_require__(1)(app);
-	__webpack_require__(10);
+	__webpack_require__(11);
 	app.use(express.static(process.cwd() + '/public'));
 
 	var getCardImages = function getCardImages(url) {
@@ -136,22 +126,21 @@
 	      var imageArray = [];
 
 	      $('div#siteTable > div.link').each(function (i, index) {
-	        var image = $(undefined).attr('data-url');
-	        var title = $(undefined).find('p.title').text().trim();
-	        var score = $(undefined).find('div.score.unvoted').text().trim();
-	        var user = $(undefined).find('a.author').text().trim();
-	        var link = $(undefined).find('p.title').text().trim();
-	        var thread = { image: image, title: title, score: score, user: user, link: link };
+	        var image = $(this).attr('data-url');
+	        var score = $(this).find('div.score.unvoted').text().trim();
+	        var user = $(this).find('a.author').text().trim();
+	        var link = $(this).find('p.title').text().trim();
+	        var thread = { image: image, score: score, user: user, link: link };
 	        imageArray.push(thread);
-	        console.log(thread);
 	        return i < 5;
 	      });
 
-	      console.log($(undefined));
-
 	      imageArray.forEach(function (thread, index, arr) {
-	        var img = thread.image;
-	        if (img.indexOf('/a/') >= 0) {
+	        var img = thread.image;;
+
+	        console.log(img.indexOf('comments'));
+
+	        if (img.indexOf('/a/') >= 0 || img.indexOf('comments') >= 0) {
 	          return arr.splice(index, 1);
 	        };
 
@@ -164,6 +153,7 @@
 	          }
 	        }
 	      });
+	      console.log('Resolving');
 	      resolve(imageArray);
 	    });
 	  });
@@ -172,13 +162,17 @@
 
 	app.get('/cards', function (req, res) {
 	  getCardImages("https://www.reddit.com/r/customhearthstone").then(function (result) {
-	    console.log(result);
-	    res.set('Content-Type', 'text/html');
-	    result.forEach(function (val) {
-	      return res.write('<a href=\'' + val.link + '\'>\n      <img width=\'150\' alt=\'' + val.title + '\' src=\'' + val.image + '\'/>\n    </a>');
-	    });
+	    res.json(result);
+	    console.log('blue');
+	    //res.set('Content-Type', 'text/html');
+	    /*result.forEach( (val) => 
+	      res.write(
+	        `<a href='${val.link}'>
+	          <img width='150' alt='${val.title}' src='${val.image}'/>
+	        </a>`
+	      ));*/
+	    res.end();
 	  });
-	  res.end();
 	});
 
 	/*app.get('/top', (req, res) => {
@@ -194,31 +188,66 @@
 	app.listen(4321);
 
 /***/ },
-/* 7 */
+/* 6 */
 /***/ function(module, exports) {
 
 	module.exports = require("request");
 
 /***/ },
-/* 8 */
+/* 7 */
 /***/ function(module, exports) {
 
 	module.exports = require("cheerio");
 
 /***/ },
+/* 8 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	var snoowrap = __webpack_require__(9);
+
+	var reddit = new snoowrap({
+	    userAgent: 'Javascript:com.example.metahs:v1.0.0 (by /u/risqueblock)',
+	    clientId: 'gwRtTldTL1EbcA',
+	    clientSecret: 'yO9GvBJjzJGjs1yU-Pa05hTz4pA',
+	    refreshToken: '22560259-eYCWoxP69phPa7djtVB-rjN05T4'
+
+	});
+
+	module.exports.reddit = reddit;
+	/*
+	{
+	    "access_token": "_xsYSZWzE8iRQM30aM8ypqS1ovc",
+	    "token_type": "bearer",
+	    "expires_in": 3600,
+	    "refresh_token": "22560259-eYCWoxP69phPa7djtVB-rjN05T4",
+	    "scope": "vote"
+	}
+
+	Rate limit = 60 requests per minute.
+	*/
+
+/***/ },
 /* 9 */
+/***/ function(module, exports) {
+
+	module.exports = require("snoowrap");
+
+/***/ },
+/* 10 */
 /***/ function(module, exports) {
 
 	module.exports = require("mongoose");
 
 /***/ },
-/* 10 */
+/* 11 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var mongoose = __webpack_require__(9);
-	var crypto = __webpack_require__(11);
+	var mongoose = __webpack_require__(10);
+	var crypto = __webpack_require__(12);
 
 	var UserSchema = new mongoose.Schema({
 	  username: { type: String, lowercase: true, required: true, unique: true },
@@ -236,7 +265,7 @@
 	};
 
 /***/ },
-/* 11 */
+/* 12 */
 /***/ function(module, exports) {
 
 	module.exports = require("crypto");

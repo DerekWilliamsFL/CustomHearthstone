@@ -7,7 +7,7 @@ module.exports = {
   },
   entry: [
     "./routes.js",
-    "./public/js/index.js",
+   // "./public/js/index.js",
     "./scrape.js"
   ],
   target: 'node',

@@ -32,23 +32,22 @@ const getCardImages = (url) => {
       const imageArray = [];
 
       
-      $('div#siteTable > div.link').each( ( i, index ) => {
+      $('div#siteTable > div.link').each( function( i, index ){
         let image = $(this).attr('data-url');
-        let title = $(this).find('p.title').text().trim();
         let score = $(this).find('div.score.unvoted').text().trim();
         let user = $(this).find('a.author').text().trim();
         let link = $(this).find('p.title').text().trim();
-        let thread = {image, title, score, user, link};
+        let thread = { image, score, user, link };
         imageArray.push(thread);
-        console.log(thread);
         return i < 5;
       });
-
-      console.log($(this));
       
-      imageArray.forEach( (thread, index, arr) => {
-        let img = thread.image;
-        if (img.indexOf('/a/') >= 0) {
+      imageArray.forEach( function(thread, index, arr) {
+        let img = thread.image;;
+        
+        console.log(img.indexOf('comments'));
+
+        if (img.indexOf('/a/') >= 0 || img.indexOf('comments') >= 0) {
           return arr.splice(index, 1);
         };
 
@@ -61,6 +60,7 @@ const getCardImages = (url) => {
           }
         }
       });
+      console.log('Resolving');
       resolve(imageArray);
     })
   );
@@ -71,16 +71,19 @@ const getCardImages = (url) => {
 
 app.get('/cards', (req, res) => {
   getCardImages("https://www.reddit.com/r/customhearthstone")
-  .then(result => {
-    console.log(result);
-    res.set('Content-Type', 'text/html');
-    result.forEach(val => res.write(
-    `<a href='${val.link}'>
-      <img width='150' alt='${val.title}' src='${val.image}'/>
-    </a>`
-    ));
-  });
+  .then((result) => {
+    res.json(result);
+    console.log('blue');
+    //res.set('Content-Type', 'text/html');
+    /*result.forEach( (val) => 
+      res.write(
+        `<a href='${val.link}'>
+          <img width='150' alt='${val.title}' src='${val.image}'/>
+        </a>`
+      ));*/
     res.end();
+  });
+  
 });
 
 
