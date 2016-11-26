@@ -3,8 +3,8 @@ const cheerio = require('cheerio');
 const express = require('express');
 const path = require('path');
 const fs = require('fs');
-const snoowrap = require('./credentials');
-const reddit = snoowrap.reddit;
+//const snoowrap = require('./credentials');
+//const reddit = snoowrap.reddit;
 const mongoose = require('mongoose');
 
 mongoose.connect('mongodb://localhost/test', (err) => {
@@ -36,10 +36,12 @@ const getCardImages = (url) => {
         let image = $(this).attr('data-url');
         let score = $(this).find('div.score.unvoted').text().trim();
         let user = $(this).find('a.author').text().trim();
-        let link = $(this).find('p.title').text().trim();
-        let thread = { image, score, user, link };
+        let title = $(this).find('p.title').text().trim();
+        var link = $(this).find('a.comments').attr('href');
+        console.log(link);
+        let thread = { image, score, user, title, link };
         imageArray.push(thread);
-        return i < 5;
+        return i < 6;
       });
       
       imageArray.forEach( function(thread, index, arr) {
@@ -60,11 +62,10 @@ const getCardImages = (url) => {
           }
         }
       });
-      console.log('Resolving');
+      imageArray.splice(0, 1);
       resolve(imageArray);
     })
   );
- // reddit.getHot().map(post => post.title).then(console.log);
 }
 
 
@@ -73,14 +74,6 @@ app.get('/cards', (req, res) => {
   getCardImages("https://www.reddit.com/r/customhearthstone")
   .then((result) => {
     res.json(result);
-    console.log('blue');
-    //res.set('Content-Type', 'text/html');
-    /*result.forEach( (val) => 
-      res.write(
-        `<a href='${val.link}'>
-          <img width='150' alt='${val.title}' src='${val.image}'/>
-        </a>`
-      ));*/
     res.end();
   });
   
@@ -88,10 +81,11 @@ app.get('/cards', (req, res) => {
 
 
 
-/*app.get('/top', (req, res) => {
+app.get('/top', (req, res) => {
   getCardImages("https://www.reddit.com/r/customhearthstone/top/?sort=top&t=day");
+  
   res.end();
-});*/
+});
 
 app.get('/login', (req, res) => {
 
