@@ -7,11 +7,17 @@ window.blue = function () {
   oReq.onreadystatechange = function () {
   if (oReq.readyState === XMLHttpRequest.DONE) {
     if (oReq.status === 200) 
-      console.log(JSON.parse(oReq.responseText)); // 'This is the returned text.'
-
-      var chs = document.getElementsByClassName('customhearthstone');
-      console.log(chs);
-      chs.innerHTML += "Done";
+      var blue = JSON.parse(oReq.responseText); // 'This is the returned text.'
+      console.log(blue);
+      var first = blue[2];
+      console.log(first);
+      var chs = document.getElementById('customhearthstone');
+      var image = document.createElement('img');
+      image.innerHTML = 
+        "<a href='" + first.link + "'>" + 
+          "<img width='150' alt='" + first.title + "' src='http://i.imgur.com/zpaTClv.png'/>" +
+        "</a>"
+      chs.appendChild(image);
     } else {
       console.log('Error: ' + oReq.status); // An error occurred during the request.
     }

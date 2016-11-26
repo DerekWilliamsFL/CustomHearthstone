@@ -1,7 +1,11 @@
 img {
-  width: 250px;
+  width: 150px;
+  height: 150px;
 }
 
-body {
-  background-color: deeppink;
+.hearthstone,
+#customhearthstone,
+.competitivehearthstone {
+  height: 100px;
+  margin: 20px 0;
 }
