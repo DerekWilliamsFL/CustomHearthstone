@@ -26,5 +26,8 @@
     "snoowrap": "^1.11.3",
     "webpack": "^1.13.3",
     "webpack-node-externals": "^1.5.4"
+  },
+  "dependencies": {
+    "body-parser": "^1.15.2"
   }
 }

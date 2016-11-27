@@ -93,11 +93,12 @@
 	var request = __webpack_require__(6);
 	var cheerio = __webpack_require__(7);
 	var express = __webpack_require__(2);
+	var bodyParser = __webpack_require__(8);
 	var path = __webpack_require__(3);
 	var fs = __webpack_require__(4);
 	//const snoowrap = require('./credentials');
 	//const reddit = snoowrap.reddit;
-	var mongoose = __webpack_require__(8);
+	var mongoose = __webpack_require__(9);
 
 	mongoose.connect('mongodb://localhost/test', function (err) {
 	  if (!err) {
@@ -107,7 +108,9 @@
 
 	var app = express();
 	__webpack_require__(1)(app);
-	__webpack_require__(9);
+	__webpack_require__(10);
+
+	app.use(bodyParser.json());
 	app.use(express.static(process.cwd() + '/public'));
 
 	var getCardImages = function getCardImages(url) {
@@ -136,9 +139,7 @@
 	      });
 
 	      imageArray.forEach(function (thread, index, arr) {
-	        var img = thread.image;;
-
-	        console.log(img.indexOf('comments'));
+	        var img = thread.image;
 
 	        if (img.indexOf('/a/') >= 0 || img.indexOf('comments') >= 0) {
 	          return arr.splice(index, 1);
@@ -166,11 +167,12 @@
 	  });
 	});
 
-	app.post('/top', function (req, res) {
+	app.post('/category', function (req, res) {
 	  console.log(req.body);
-	  //getCardImages("https://www.reddit.com/r/customhearthstone/top/?sort=top&t=day");
-
-	  res.end();
+	  getCardImages(req.body.url).then(function (result) {
+	    res.json(result);
+	    res.end();
+	  });
 	});
 
 	app.get('/login', function (req, res) {
@@ -196,16 +198,22 @@
 /* 8 */
 /***/ function(module, exports) {
 
-	module.exports = require("mongoose");
+	module.exports = require("body-parser");
 
 /***/ },
 /* 9 */
+/***/ function(module, exports) {
+
+	module.exports = require("mongoose");
+
+/***/ },
+/* 10 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var mongoose = __webpack_require__(8);
-	var crypto = __webpack_require__(10);
+	var mongoose = __webpack_require__(9);
+	var crypto = __webpack_require__(11);
 
 	var UserSchema = new mongoose.Schema({
 	  username: { type: String, lowercase: true, required: true, unique: true },
@@ -223,7 +231,7 @@
 	};
 
 /***/ },
-/* 10 */
+/* 11 */
 /***/ function(module, exports) {
 
 	module.exports = require("crypto");

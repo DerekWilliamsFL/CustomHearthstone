@@ -1,6 +1,7 @@
 const request = require('request');
 const cheerio = require('cheerio');
 const express = require('express');
+const bodyParser = require('body-parser');
 const path = require('path');
 const fs = require('fs');
 //const snoowrap = require('./credentials');
@@ -16,6 +17,8 @@ mongoose.connect('mongodb://localhost/test', (err) => {
 const app = express();
 require('./routes')(app);
 require('./models/User');
+
+app.use(bodyParser.json());
 app.use(express.static(process.cwd() + '/public'));
 
 
@@ -45,9 +48,7 @@ const getCardImages = (url) => {
       });
       
       imageArray.forEach( function(thread, index, arr) {
-        let img = thread.image;;
-        
-        console.log(img.indexOf('comments'));
+        let img = thread.image;
 
         if (img.indexOf('/a/') >= 0 || img.indexOf('comments') >= 0) {
           return arr.splice(index, 1);
@@ -76,16 +77,17 @@ app.get('/cards', (req, res) => {
     res.json(result);
     res.end();
   });
-  
 });
 
 
 
-app.post('/top', (req, res) => {
+app.post('/category', (req, res) => {
   console.log(req.body);
-  //getCardImages("https://www.reddit.com/r/customhearthstone/top/?sort=top&t=day");
-  
-  res.end();
+  getCardImages(req.body.url)
+  .then((result) => {
+    res.json(result);
+    res.end();
+  });
 });
 
 app.get('/login', (req, res) => {

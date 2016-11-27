@@ -29,9 +29,9 @@
         <section class="col-xs-12 text-center customhearthstone">
             <p>Custom Hearthstone</p>
             <button class="button button-primary" onclick="blue()">Hot</button>
-            <button class="button button-primary" onclick="red()">Top</button>
-            <button class="button button-primary">Controversial</button>
-            <button class="button button-primary">New</button>
+            <button class="button button-primary" data-url="https://www.reddit.com/r/customhearthstone/top/?sort=top&t=day" onclick="red(event)">Top</button>
+            <button class="button button-primary" data-url="https://www.reddit.com/r/customhearthstone/controversial/?sort=controversial&t=day" onclick="red(event)">Controversial</button>
+            <button class="button button-primary" data-url="https://www.reddit.com/r/customhearthstone/new/?sort=top&t=day" onclick="red(event)">New</button>
             <div id="cards"></div>
         </section>
         <br> 
