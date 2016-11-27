@@ -59,8 +59,6 @@
 	var fs = __webpack_require__(4);
 	var app = express();
 	module.exports = function (app) {
-	  //  Routes  //
-
 
 	  app.get('/', function (req, res) {
 	    console.log('routes working');
@@ -134,7 +132,7 @@
 	        console.log(link);
 	        var thread = { image: image, score: score, user: user, title: title, link: link };
 	        imageArray.push(thread);
-	        return i < 5;
+	        return i < 6;
 	      });
 
 	      imageArray.forEach(function (thread, index, arr) {
@@ -155,7 +153,6 @@
 	          }
 	        }
 	      });
-	      console.log('Resolving');
 	      imageArray.splice(0, 1);
 	      resolve(imageArray);
 	    });
@@ -169,8 +166,9 @@
 	  });
 	});
 
-	app.get('/top', function (req, res) {
-	  getCardImages("https://www.reddit.com/r/customhearthstone/top/?sort=top&t=day");
+	app.post('/top', function (req, res) {
+	  console.log(req.body);
+	  //getCardImages("https://www.reddit.com/r/customhearthstone/top/?sort=top&t=day");
 
 	  res.end();
 	});

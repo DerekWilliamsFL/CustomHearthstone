@@ -81,8 +81,9 @@ app.get('/cards', (req, res) => {
 
 
 
-app.get('/top', (req, res) => {
-  getCardImages("https://www.reddit.com/r/customhearthstone/top/?sort=top&t=day");
+app.post('/top', (req, res) => {
+  console.log(req.body);
+  //getCardImages("https://www.reddit.com/r/customhearthstone/top/?sort=top&t=day");
   
   res.end();
 });
