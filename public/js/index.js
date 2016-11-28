@@ -25,7 +25,7 @@ window.red = function (event) {
   var oReq = new XMLHttpRequest();
   oReq.open("POST", "http://localhost:4321/category");
   oReq.setRequestHeader("Content-type", "application/json");
-  var url = event.target.attributes[1].nodeValue;
+  var url = event.target.attributes[2].nodeValue;
   var data = JSON.stringify({url: url});
   oReq.send(data);
   oReq.onreadystatechange = function () {

@@ -5,7 +5,6 @@ const app = express();
 module.exports = function(app){
 
 app.get('/', (req, res) => { 
-  console.log('routes working');
   res.sendFile((process.cwd() + '/public/views/index.html'));
 });
 

@@ -4,8 +4,6 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const path = require('path');
 const fs = require('fs');
-//const snoowrap = require('./credentials');
-//const reddit = snoowrap.reddit;
 const mongoose = require('mongoose');
 
 mongoose.connect('mongodb://localhost/test', (err) => {
@@ -23,34 +21,31 @@ app.use(express.static(process.cwd() + '/public'));
 
 
 const getCardImages = (url) => {
-  console.log('Running GCI');
   return new Promise( (resolve, reject) =>
     request(url, (error, res, body) => {
       if(error) {
         reject(console.log("Error: " + error));
       }
-      else { console.log('No Error') }
 
       const $ = cheerio.load(body);
       const imageArray = [];
 
       
-      $('div#siteTable > div.link').each( function( i, index ){
+      $('div#siteTable > div.link:not(.stickied)').each( function( i, index ){
         let image = $(this).attr('data-url');
         let score = $(this).find('div.score.unvoted').text().trim();
         let user = $(this).find('a.author').text().trim();
         let title = $(this).find('p.title').text().trim();
         var link = $(this).find('a.comments').attr('href');
-        console.log(link);
         let thread = { image, score, user, title, link };
         imageArray.push(thread);
-        return i < 6;
+        return i < 5;
       });
       
       imageArray.forEach( function(thread, index, arr) {
         let img = thread.image;
 
-        if (img.indexOf('/a/') >= 0 || img.indexOf('comments') >= 0) {
+        if (img.indexOf('/a/') >= 0) {
           return arr.splice(index, 1);
         };
 
@@ -63,7 +58,6 @@ const getCardImages = (url) => {
           }
         }
       });
-      imageArray.splice(0, 1);
       resolve(imageArray);
     })
   );

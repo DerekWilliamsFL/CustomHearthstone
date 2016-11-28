@@ -8,8 +8,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
         <link rel="apple-touch-icon" href="apple-touch-icon.png">
-
-        <!--<link rel="stylesheet" href="css/normalize.css">-->
+        
         <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
 
         <link rel="stylesheet" href="css/index.css">
@@ -29,9 +28,9 @@
         <section class="col-xs-12 text-center customhearthstone">
             <p>Custom Hearthstone</p>
             <button class="button button-primary" onclick="blue()">Hot</button>
-            <button class="button button-primary" data-url="https://www.reddit.com/r/customhearthstone/top/?sort=top&t=day" onclick="red(event)">Top</button>
-            <button class="button button-primary" data-url="https://www.reddit.com/r/customhearthstone/controversial/?sort=controversial&t=day" onclick="red(event)">Controversial</button>
-            <button class="button button-primary" data-url="https://www.reddit.com/r/customhearthstone/new/?sort=top&t=day" onclick="red(event)">New</button>
+            <button class="button button-primary" onclick="red(event)" data-url="https://www.reddit.com/r/customhearthstone/top/?sort=top&t=day">Top</button>
+            <button class="button button-primary" onclick="red(event)" data-url="https://www.reddit.com/r/customhearthstone/controversial/?sort=controversial&t=day">Controversial</button>
+            <button class="button button-primary" onclick="red(event)" data-url="https://www.reddit.com/r/customhearthstone/new/?sort=new&t=day">New</button>
             <div id="cards"></div>
         </section>
         <br> 

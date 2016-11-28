@@ -126,22 +126,21 @@
 	      var $ = cheerio.load(body);
 	      var imageArray = [];
 
-	      $('div#siteTable > div.link').each(function (i, index) {
+	      $('div#siteTable > div.link:not(.stickied)').each(function (i, index) {
 	        var image = $(this).attr('data-url');
 	        var score = $(this).find('div.score.unvoted').text().trim();
 	        var user = $(this).find('a.author').text().trim();
 	        var title = $(this).find('p.title').text().trim();
 	        var link = $(this).find('a.comments').attr('href');
-	        console.log(link);
 	        var thread = { image: image, score: score, user: user, title: title, link: link };
 	        imageArray.push(thread);
-	        return i < 6;
+	        return i < 5;
 	      });
 
 	      imageArray.forEach(function (thread, index, arr) {
 	        var img = thread.image;
 
-	        if (img.indexOf('/a/') >= 0 || img.indexOf('comments') >= 0) {
+	        if (img.indexOf('/a/') >= 0) {
 	          return arr.splice(index, 1);
 	        };
 
@@ -154,7 +153,6 @@
 	          }
 	        }
 	      });
-	      imageArray.splice(0, 1);
 	      resolve(imageArray);
 	    });
 	  });
