@@ -8,6 +8,7 @@ window.blue = function () {
   if (oReq.readyState === XMLHttpRequest.DONE && oReq.status === 200) {
       var blue = JSON.parse(oReq.responseText);
       var chs = document.getElementById('cards');
+      chs.innerHTML = '';
       blue.forEach(function(element) {
         chs.innerHTML += 
         "<a href='" + element.link + "'>" + 
@@ -31,6 +32,7 @@ window.red = function (event) {
   if (oReq.readyState === XMLHttpRequest.DONE && oReq.status === 200) {
       var blue = JSON.parse(oReq.responseText);
       var chs = document.getElementById('cards');
+      chs.innerHTML = '';
       blue.forEach(function(element) {
         chs.innerHTML += 
         "<a href='" + element.link + "'>" + 
