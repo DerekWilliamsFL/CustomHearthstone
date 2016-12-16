@@ -5,6 +5,7 @@ const app = express();
 module.exports = function(app){
 
 app.get('/', (req, res) => { 
+  console.log(__dirname);
   res.sendFile((process.cwd() + '/public/views/index.html'));
 });
 

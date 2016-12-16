@@ -61,7 +61,7 @@
 	module.exports = function (app) {
 
 	  app.get('/', function (req, res) {
-	    console.log('routes working');
+	    console.log(__dirname);
 	    res.sendFile(process.cwd() + '/public/views/index.html');
 	  });
 	};
@@ -96,8 +96,6 @@
 	var bodyParser = __webpack_require__(8);
 	var path = __webpack_require__(3);
 	var fs = __webpack_require__(4);
-	//const snoowrap = require('./credentials');
-	//const reddit = snoowrap.reddit;
 	var mongoose = __webpack_require__(9);
 
 	mongoose.connect('mongodb://localhost/test', function (err) {
@@ -111,16 +109,14 @@
 	__webpack_require__(10);
 
 	app.use(bodyParser.json());
-	app.use(express.static(process.cwd() + '/public'));
+	app.use(express.static(path.join(__dirname, '../')));
+	console.log(path.join(__dirname, '../'));
 
 	var getCardImages = function getCardImages(url) {
-	  console.log('Running GCI');
 	  return new Promise(function (resolve, reject) {
 	    return request(url, function (error, res, body) {
 	      if (error) {
 	        reject(console.log("Error: " + error));
-	      } else {
-	        console.log('No Error');
 	      }
 
 	      var $ = cheerio.load(body);
@@ -134,13 +130,12 @@
 	        var link = $(this).find('a.comments').attr('href');
 	        var thread = { image: image, score: score, user: user, title: title, link: link };
 	        imageArray.push(thread);
-	        return i < 5;
+	        return i < 9;
 	      });
 
 	      imageArray.forEach(function (thread, index, arr) {
 	        var img = thread.image;
-
-	        if (img.indexOf('/a/') >= 0) {
+	        if (img.indexOf('/a/') >= 0 || img.indexOf('comments') >= 0) {
 	          return arr.splice(index, 1);
 	        };
 

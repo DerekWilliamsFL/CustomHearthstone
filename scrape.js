@@ -17,8 +17,7 @@ require('./routes')(app);
 require('./models/User');
 
 app.use(bodyParser.json());
-app.use(express.static(process.cwd() + '/public'));
-
+app.use(express.static(path.join(__dirname, '../')));
 
 const getCardImages = (url) => {
   return new Promise( (resolve, reject) =>
@@ -36,16 +35,15 @@ const getCardImages = (url) => {
         let score = $(this).find('div.score.unvoted').text().trim();
         let user = $(this).find('a.author').text().trim();
         let title = $(this).find('p.title').text().trim();
-        var link = $(this).find('a.comments').attr('href');
+        let link = $(this).find('a.comments').attr('href');
         let thread = { image, score, user, title, link };
         imageArray.push(thread);
-        return i < 5;
+        return i < 9;
       });
       
       imageArray.forEach( function(thread, index, arr) {
         let img = thread.image;
-
-        if (img.indexOf('/a/') >= 0) {
+        if ((img.indexOf('/a/') >= 0) || (img.indexOf('comments') >= 0)) {
           return arr.splice(index, 1);
         };
 
