@@ -54,7 +54,7 @@ const getCardImages = (url) => {
         let link = $(this).find('a.comments').attr('href');
         let thread = { image, score, user, title, link };
         imageArray.push(thread);
-        return i < 5;
+        return i < 4;
       });
       
       imageArray.forEach( function(thread, index, arr) {
@@ -90,7 +90,6 @@ app.get('/cards', (req, res) => {
 
 
 app.post('/category', (req, res) => {
-  console.log(req.body);
   getCardImages(req.body.url)
   .then((result) => {
     res.json(result);

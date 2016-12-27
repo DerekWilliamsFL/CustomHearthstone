@@ -3,9 +3,35 @@ img {
   cursor: pointer;
 }
 
+.results {
+  position: relative;
+}
+
+.results:before {
+  font-family: FontAwesome;
+  content: "\f004";
+  position: absolute;
+  top: -100px;
+  left: 25%;
+  display: inline-block;
+}
+
+.results:after {
+  font-family: FontAwesome;
+  content: "\f00d";
+  position: absolute;
+  top: -100px;
+  left: 75%;
+  display: inline-block;
+}
+
 .hearthstone,
 .customhearthstone,
 .competitivehearthstone {
   height: 100px;
   margin: 20px 0;
+}
+
+.fa {
+  font-size: 20px;
 }

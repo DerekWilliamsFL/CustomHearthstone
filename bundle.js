@@ -158,7 +158,7 @@
 	        var link = $(this).find('a.comments').attr('href');
 	        var thread = { image: image, score: score, user: user, title: title, link: link };
 	        imageArray.push(thread);
-	        return i < 5;
+	        return i < 4;
 	      });
 
 	      imageArray.forEach(function (thread, index, arr) {
@@ -189,7 +189,6 @@
 	});
 
 	app.post('/category', function (req, res) {
-	  console.log(req.body);
 	  getCardImages(req.body.url).then(function (result) {
 	    res.json(result);
 	    res.end();

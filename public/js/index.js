@@ -11,7 +11,7 @@
         chs.innerHTML = '';
         blue.forEach(function(element) {
           chs.innerHTML += 
-          "<a href='" + element.link + "'>" + 
+          "<a class='results' href='" + element.link + "'>" + 
             "<img alt='" + element.title + "' src='" + element.image +"'/>" +
           "</a>"
         });
@@ -35,7 +35,7 @@
         chs.innerHTML = '';
         blue.forEach(function(element) {
           chs.innerHTML += 
-          "<a href='" + element.link + "'>" + 
+          "<a class='results' href='" + element.link + "'>" + 
             "<img alt='" + element.title + "' src='" + element.image +"'/>" +
           "</a>"
         });
