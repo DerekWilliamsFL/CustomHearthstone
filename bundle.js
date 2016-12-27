@@ -124,7 +124,15 @@
 
 	var UserSchema = new mongoose.Schema({
 	  username: { type: String, lowercase: true, required: true, unique: true },
-	  password: { type: String, lowercase: true, required: true, unique: true }
+	  password: { type: String, lowercase: true, required: true, unique: true },
+	  likedCards: [{
+	    link: String,
+	    image: String
+	  }],
+	  dislikedCards: [{
+	    link: String,
+	    image: String
+	  }]
 	});
 
 	var User = mongoose.model('User', UserSchema);
@@ -207,9 +215,17 @@
 	  }
 
 	  User.findOne({ username: username }, function (err, existingUser) {
-	    if (err) return console.log(err);
-	    if (existingUser) return console.log('Username in use: ' + existingUser);
-	    var newUser = new User({ username: username, password: password });
+	    if (err) {
+	      return console.log(err);
+	    };
+	    if (existingUser) {
+	      existingUser.likedCards.push({ link: "google.com", image: "https://i.redd.it/tngclbvdk46y.png" });
+	      existingUser.save(function (err, user) {
+	        console.log('Saved');
+	      });
+	      return console.log('Username in use: ' + existingUser);
+	    };
+	    var newUser = new User({ username: username, password: password, likedCards: [], dislikedCards: [] });
 	    newUser.save(function (err, user) {
 	      if (err) {
 	        return console.log(err);

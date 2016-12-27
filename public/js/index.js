@@ -11,6 +11,8 @@
         chs.innerHTML = '';
         blue.forEach(function(element) {
           chs.innerHTML += 
+          "<i class='fa fa-heart' data-url='" + element.link + "' aria-hidden='true'></i>" + 
+          "<i class='fa fa-times' aria-hidden='true'></i>" + 
           "<a class='results' href='" + element.link + "'>" + 
             "<img alt='" + element.title + "' src='" + element.image +"'/>" +
           "</a>"
@@ -35,6 +37,8 @@
         chs.innerHTML = '';
         blue.forEach(function(element) {
           chs.innerHTML += 
+          "<i class='fa fa-heart' aria-hidden='true'></i>" + 
+          "<i class='fa fa-times' aria-hidden='true'></i>" + 
           "<a class='results' href='" + element.link + "'>" + 
             "<img alt='" + element.title + "' src='" + element.image +"'/>" +
           "</a>"

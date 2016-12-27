@@ -12,6 +12,8 @@ const UserSchema = new mongoose.Schema({
   password: { type: String, lowercase: true, required: true, unique: true },
 });
 
+UserSchema.add({ likedCards: [], dislikedCards: []});
+
 const User = mongoose.model('User', UserSchema);
 
 console.log('Blue');

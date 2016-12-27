@@ -3,7 +3,7 @@ img {
   cursor: pointer;
 }
 
-.results {
+/*.results {
   position: relative;
 }
 
@@ -23,7 +23,7 @@ img {
   top: -100px;
   left: 75%;
   display: inline-block;
-}
+}*/
 
 .hearthstone,
 .customhearthstone,
