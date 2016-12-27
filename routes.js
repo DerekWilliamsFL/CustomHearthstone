@@ -1,12 +1,14 @@
 const express = require('express');
 const path = require('path');
 const fs = require('fs');
+const passport = require('passport');
+const LocalStrategy = require('passport-local').Strategy;
+
 const app = express();
 module.exports = function(app){
 
 app.get('/', (req, res) => { 
-  console.log(__dirname);
-  res.sendFile((process.cwd() + '/public/views/index.html'));
+  res.sendFile(path.join(__dirname, '/public/views/index.html'));
 });
 
 }

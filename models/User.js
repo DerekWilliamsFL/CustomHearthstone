@@ -1,17 +1,20 @@
-var mongoose = require('mongoose');
-var crypto = require('crypto');
-
-var UserSchema = new mongoose.Schema({
-  username: { type: String, lowercase: true, required: true, unique: true },
-  hash: String,
-  salt: String,
-  favorites: []
+const mongoose = require('mongoose');
+const Schema = mongoose.Schema;
+  
+mongoose.connect('mongodb://localhost/test', (err) => {
+  if (!err) {
+    console.log('Connected');
+  };
 });
 
-mongoose.model('User', UserSchema);
+const UserSchema = new mongoose.Schema({
+  username: { type: String, lowercase: true, required: true, unique: true },
+  password: { type: String, lowercase: true, required: true, unique: true },
+});
 
-UserSchema.methods.setPassword = (password) => {
-  this.salt = crypto.randomBytes(16).toString('hex');
+const User = mongoose.model('User', UserSchema);
 
-  this.hash = crypto.pbkdf2Sync(password, this.salt, 1000, 64).toString('hex');
-}
+console.log('Blue');
+
+module.exports = User;
+

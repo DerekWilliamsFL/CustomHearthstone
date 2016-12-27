@@ -13,7 +13,7 @@ module.exports = {
   ],
   externals: [nodeExternals()],
   output: {
-    path: __dirname + "/public/js",
+    path: __dirname,
     filename: "bundle.js"
   },
   module: {

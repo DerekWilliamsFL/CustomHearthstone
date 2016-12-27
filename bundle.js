@@ -45,7 +45,7 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	__webpack_require__(1);
-	module.exports = __webpack_require__(5);
+	module.exports = __webpack_require__(7);
 
 
 /***/ },
@@ -57,12 +57,14 @@
 	var express = __webpack_require__(2);
 	var path = __webpack_require__(3);
 	var fs = __webpack_require__(4);
+	var passport = __webpack_require__(5);
+	var LocalStrategy = __webpack_require__(6).Strategy;
+
 	var app = express();
 	module.exports = function (app) {
 
 	  app.get('/', function (req, res) {
-	    console.log(__dirname);
-	    res.sendFile(process.cwd() + '/public/views/index.html');
+	    res.sendFile(path.join(__dirname, '/public/views/index.html'));
 	  });
 	};
 
@@ -86,31 +88,57 @@
 
 /***/ },
 /* 5 */
+/***/ function(module, exports) {
+
+	module.exports = require("passport");
+
+/***/ },
+/* 6 */
+/***/ function(module, exports) {
+
+	module.exports = require("passport-local");
+
+/***/ },
+/* 7 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var request = __webpack_require__(6);
-	var cheerio = __webpack_require__(7);
+	var request = __webpack_require__(8);
+	var cheerio = __webpack_require__(9);
 	var express = __webpack_require__(2);
-	var bodyParser = __webpack_require__(8);
+	var bodyParser = __webpack_require__(10);
 	var path = __webpack_require__(3);
 	var fs = __webpack_require__(4);
-	var mongoose = __webpack_require__(9);
+	var mongoose = __webpack_require__(11);
+	var Schema = mongoose.Schema;
+	var passport = __webpack_require__(5);
+	var LocalStrategy = __webpack_require__(6).Strategy;
 
+	mongoose.Promise = global.Promise;
 	mongoose.connect('mongodb://localhost/test', function (err) {
 	  if (!err) {
 	    console.log('Connected');
 	  };
 	});
 
-	var app = express();
-	__webpack_require__(1)(app);
-	__webpack_require__(10);
+	var UserSchema = new mongoose.Schema({
+	  username: { type: String, lowercase: true, required: true, unique: true },
+	  password: { type: String, lowercase: true, required: true, unique: true }
+	});
 
+	var User = mongoose.model('User', UserSchema);
+
+	var app = express();
 	app.use(bodyParser.json());
-	app.use(express.static(path.join(__dirname, '../')));
-	console.log(path.join(__dirname, '../'));
+	app.use(bodyParser.urlencoded({
+	  extended: true
+	}));
+	app.use(passport.initialize());
+	app.use(passport.session());
+	app.use(express.static(path.join(__dirname, '/public')));
+
+	__webpack_require__(1)(app);
 
 	var getCardImages = function getCardImages(url) {
 	  return new Promise(function (resolve, reject) {
@@ -130,7 +158,7 @@
 	        var link = $(this).find('a.comments').attr('href');
 	        var thread = { image: image, score: score, user: user, title: title, link: link };
 	        imageArray.push(thread);
-	        return i < 9;
+	        return i < 5;
 	      });
 
 	      imageArray.forEach(function (thread, index, arr) {
@@ -168,66 +196,65 @@
 	  });
 	});
 
-	app.get('/login', function (req, res) {
+	app.post('/login', function (req, res) {
+	  var username = req.body.username;
+	  var password = req.body.password;
 
+	  if (!username) {
+	    res.status(422).send({ error: 'Please enter an email address.' });
+	  }
+	  if (!password) {
+	    res.status(422).send({ error: 'Please enter a password.' });
+	  }
+
+	  User.findOne({ username: username }, function (err, existingUser) {
+	    if (err) return console.log(err);
+	    if (existingUser) return console.log('Username in use: ' + existingUser);
+	    var newUser = new User({ username: username, password: password });
+	    newUser.save(function (err, user) {
+	      if (err) {
+	        return console.log(err);
+	      } else {
+	        console.log('New user created: ' + user);
+	      }
+	    });
+	  });
+	  res.end();
+	});
+
+	app.get('/readUsers', function (req, res) {
+	  User.find(function (err, users) {
+	    if (err) return console.log(err);
+	    console.log('User accounts: ' + users);
+	  });
 	  res.end();
 	});
 
 	app.listen(4321);
 
 /***/ },
-/* 6 */
+/* 8 */
 /***/ function(module, exports) {
 
 	module.exports = require("request");
 
 /***/ },
-/* 7 */
+/* 9 */
 /***/ function(module, exports) {
 
 	module.exports = require("cheerio");
 
 /***/ },
-/* 8 */
+/* 10 */
 /***/ function(module, exports) {
 
 	module.exports = require("body-parser");
 
 /***/ },
-/* 9 */
-/***/ function(module, exports) {
-
-	module.exports = require("mongoose");
-
-/***/ },
-/* 10 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-
-	var mongoose = __webpack_require__(9);
-	var crypto = __webpack_require__(11);
-
-	var UserSchema = new mongoose.Schema({
-	  username: { type: String, lowercase: true, required: true, unique: true },
-	  hash: String,
-	  salt: String,
-	  favorites: []
-	});
-
-	mongoose.model('User', UserSchema);
-
-	UserSchema.methods.setPassword = function (password) {
-	  undefined.salt = crypto.randomBytes(16).toString('hex');
-
-	  undefined.hash = crypto.pbkdf2Sync(password, undefined.salt, 1000, 64).toString('hex');
-	};
-
-/***/ },
 /* 11 */
 /***/ function(module, exports) {
 
-	module.exports = require("crypto");
+	module.exports = require("mongoose");
 
 /***/ }
 /******/ ]);

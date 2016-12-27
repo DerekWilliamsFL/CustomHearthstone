@@ -9,7 +9,7 @@
     ]
   },
   "scripts": {
-    "test": "node public/js/bundle.js"
+    "test": "node bundle.js"
   },
   "author": "Derek ",
   "license": "ISC",
@@ -28,6 +28,9 @@
     "webpack-node-externals": "^1.5.4"
   },
   "dependencies": {
-    "body-parser": "^1.15.2"
+    "bcrypt-nodejs": "0.0.3",
+    "body-parser": "^1.15.2",
+    "passport": "^0.3.2",
+    "passport-local": "^1.0.0"
   }
 }

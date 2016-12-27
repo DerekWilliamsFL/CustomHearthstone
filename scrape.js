@@ -5,19 +5,35 @@ const bodyParser = require('body-parser');
 const path = require('path');
 const fs = require('fs');
 const mongoose = require('mongoose');
+const Schema = mongoose.Schema;
+const passport = require('passport');
+const LocalStrategy = require('passport-local').Strategy;
 
+mongoose.Promise = global.Promise;
 mongoose.connect('mongodb://localhost/test', (err) => {
   if (!err) {
     console.log('Connected');
   };
 });
 
-const app = express();
-require('./routes')(app);
-require('./models/User');
+const UserSchema = new mongoose.Schema({
+  username: { type: String, lowercase: true, required: true, unique: true },
+  password: { type: String, lowercase: true, required: true, unique: true },
+});
 
+const User = mongoose.model('User', UserSchema);
+
+const app = express();
 app.use(bodyParser.json());
-app.use(express.static(path.join(__dirname, '../')));
+app.use(bodyParser.urlencoded({
+  extended: true
+}));
+app.use(passport.initialize());
+app.use(passport.session());
+app.use(express.static(path.join(__dirname, '/public')));
+
+require('./routes')(app);
+
 
 const getCardImages = (url) => {
   return new Promise( (resolve, reject) =>
@@ -38,7 +54,7 @@ const getCardImages = (url) => {
         let link = $(this).find('a.comments').attr('href');
         let thread = { image, score, user, title, link };
         imageArray.push(thread);
-        return i < 9;
+        return i < 5;
       });
       
       imageArray.forEach( function(thread, index, arr) {
@@ -82,8 +98,30 @@ app.post('/category', (req, res) => {
   });
 });
 
-app.get('/login', (req, res) => {
+app.post('/login', (req, res) => {
+  const username = req.body.username;
+  const password = req.body.password;
 
+  if (!username) { res.status(422).send({ error: 'Please enter an email address.' })}
+  if (!password) { res.status(422).send({ error: 'Please enter a password.' })}
+
+  User.findOne({username: username}, function (err, existingUser){
+    if (err) return console.log(err);
+    if (existingUser) return console.log('Username in use: ' +existingUser);
+    let newUser = new User({username: username, password: password});
+    newUser.save(function(err, user) {
+      if (err) { return console.log(err); }
+      else { console.log('New user created: ' + user); }
+    });
+  });
+  res.end();
+});
+
+app.get('/readUsers', (req, res) => {
+  User.find(function (err, users){
+    if (err) return console.log(err);
+    console.log('User accounts: ' + users);
+  });
   res.end();
 });
 
