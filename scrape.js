@@ -8,6 +8,7 @@ const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 const passport = require('passport');
 const LocalStrategy = require('passport-local').Strategy;
+const session = require('express-session');
 
 mongoose.Promise = global.Promise;
 mongoose.connect('mongodb://localhost/test', (err) => {
@@ -21,11 +22,15 @@ const UserSchema = new mongoose.Schema({
   password: { type: String, lowercase: true, required: true, unique: true },
   likedCards: [{
     link: String,
-    image: String
+    image: String,
+    title: String,
+    score: String
   }],
   dislikedCards: [{
     link: String,
-    image: String
+    image: String,
+    title: String,
+    score: String
   }],
 });
 
@@ -36,8 +41,40 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({
   extended: true
 }));
+app.use(session({ 
+  secret: 'wow',
+  resave: false,
+  saveUninitialized: true
+}));
 app.use(passport.initialize());
 app.use(passport.session());
+
+passport.serializeUser(function(user, done) {
+  done(null, user.id);
+});
+
+passport.deserializeUser(function(id, done) {
+  User.findById(id, function (err, user) {
+    done(err, user);
+  });
+});
+
+passport.use(new LocalStrategy(function(username, password, done) {
+  User.findOne({username: username}, function (err, existingUser){
+    if (err) { return done(err) };
+    if (existingUser) {
+      existingUser.likedCards.push({link: "google.com", image: "https://i.redd.it/tngclbvdk46y.png"});
+      return done(null, existingUser); 
+    };
+    let newUser = new User({ username: username, password: password, likedCards: [], dislikedCards: [] });
+    newUser.save(function(err, user) {
+      if (err) { return done(err); }
+      else { console.log('New user created: ' + user); }
+    return done(err);
+    });
+  });
+}));
+
 app.use(express.static(path.join(__dirname, '/public')));
 
 require('./routes')(app);
@@ -96,15 +133,26 @@ app.get('/cards', (req, res) => {
 });
 
 app.get('/likes', (req, res) => {
-  console.log(req.session);
+  res.json(req.user.likedCards);
+  res.end();
 });
 
 app.post('/likes', (req, res) => {
-  console.log(req.session);
+  req.user.likedCards.push(req.body);
+  req.user.save(function(err, user) {
+    if (err) { return console.log(err); }
+    else { return console.log(req.user.likedCards); }
+  });
+  res.end();
 });
 
 app.get('/dislikes', (req, res) => {
-
+  req.user.dislikedCards.push(req.body);
+  req.user.save(function(err, user) {
+    if (err) { return console.log(err); }
+    else { return console.log(req.user.dislikedCards); }
+  });
+  res.end();
 });
 
 
@@ -116,31 +164,6 @@ app.post('/category', (req, res) => {
   });
 });
 
-passport.serializeUser(function(user, done) {
-  done(null, user.id);
-});
-
-passport.deserializeUser(function(id, done) {
-  User.findById(id, function (err, user) {
-    done(err, user);
-  });
-});
-
-passport.use(new LocalStrategy(function(username, password, done) {
-  User.findOne({username: username}, function (err, existingUser){
-    if (err) { return done(err) };
-    if (existingUser) {
-      existingUser.likedCards.push({link: "google.com", image: "https://i.redd.it/tngclbvdk46y.png"});
-      return done(null, existingUser); 
-    };
-    let newUser = new User({ username: username, password: password, likedCards: [], dislikedCards: [] });
-    newUser.save(function(err, user) {
-      if (err) { return done(err); }
-      else { console.log('New user created: ' + user); }
-    return done(err);
-    });
-  });
-}));
 
 app.post('/login',
   passport.authenticate('local', { successRedirect: '/',

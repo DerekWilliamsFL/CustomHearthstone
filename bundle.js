@@ -114,6 +114,7 @@
 	var Schema = mongoose.Schema;
 	var passport = __webpack_require__(5);
 	var LocalStrategy = __webpack_require__(6).Strategy;
+	var session = __webpack_require__(12);
 
 	mongoose.Promise = global.Promise;
 	mongoose.connect('mongodb://localhost/test', function (err) {
@@ -127,11 +128,15 @@
 	  password: { type: String, lowercase: true, required: true, unique: true },
 	  likedCards: [{
 	    link: String,
-	    image: String
+	    image: String,
+	    title: String,
+	    score: String
 	  }],
 	  dislikedCards: [{
 	    link: String,
-	    image: String
+	    image: String,
+	    title: String,
+	    score: String
 	  }]
 	});
 
@@ -142,8 +147,45 @@
 	app.use(bodyParser.urlencoded({
 	  extended: true
 	}));
+	app.use(session({
+	  secret: 'wow',
+	  resave: false,
+	  saveUninitialized: true
+	}));
 	app.use(passport.initialize());
 	app.use(passport.session());
+
+	passport.serializeUser(function (user, done) {
+	  done(null, user.id);
+	});
+
+	passport.deserializeUser(function (id, done) {
+	  User.findById(id, function (err, user) {
+	    done(err, user);
+	  });
+	});
+
+	passport.use(new LocalStrategy(function (username, password, done) {
+	  User.findOne({ username: username }, function (err, existingUser) {
+	    if (err) {
+	      return done(err);
+	    };
+	    if (existingUser) {
+	      existingUser.likedCards.push({ link: "google.com", image: "https://i.redd.it/tngclbvdk46y.png" });
+	      return done(null, existingUser);
+	    };
+	    var newUser = new User({ username: username, password: password, likedCards: [], dislikedCards: [] });
+	    newUser.save(function (err, user) {
+	      if (err) {
+	        return done(err);
+	      } else {
+	        console.log('New user created: ' + user);
+	      }
+	      return done(err);
+	    });
+	  });
+	}));
+
 	app.use(express.static(path.join(__dirname, '/public')));
 
 	__webpack_require__(1)(app);
@@ -197,14 +239,48 @@
 	});
 
 	app.get('/likes', function (req, res) {
-	  console.log(req.session);
+	  /*req.user.likedCards.forEach(function (card, index){
+	    let element = 
+	    "<div class='card'>" + 
+	      "<div class='buttons'><i class='fa fa-heart' onclick='like(event)' aria-hidden='true'></i>" + 
+	      "<span>" + card.score + "</span><i class='fa fa-times' aria-hidden='true'></i></div>" + 
+	      "<a class='results' href='" + card.link + "'>" + 
+	        "<img alt='" + card.title + "' src='" + card.image +"'/>" +
+	        "<p>" + card.title + "</p>" + 
+	    "</a></div>"
+	    cards.push(element);
+	  });
+	  res.header('Content-Type', 'text/html');
+	  res.write(cards[0]);
+	  */
+	  req.user.likedCards = [];
+	  res.json(req.user.likedCards);
+	  res.end();
 	});
 
 	app.post('/likes', function (req, res) {
-	  console.log(req.session);
+	  req.user.likedCards.push(req.body);
+	  req.user.save(function (err, user) {
+	    if (err) {
+	      return console.log(err);
+	    } else {
+	      return console.log(req.user.likedCards);
+	    }
+	  });
+	  res.end();
 	});
 
-	app.get('/dislikes', function (req, res) {});
+	app.get('/dislikes', function (req, res) {
+	  req.user.dislikedCards.push(req.body);
+	  req.user.save(function (err, user) {
+	    if (err) {
+	      return console.log(err);
+	    } else {
+	      return console.log(req.user.dislikedCards);
+	    }
+	  });
+	  res.end();
+	});
 
 	app.post('/category', function (req, res) {
 	  getCardImages(req.body.url).then(function (result) {
@@ -212,37 +288,6 @@
 	    res.end();
 	  });
 	});
-
-	passport.serializeUser(function (user, done) {
-	  done(null, user.id);
-	});
-
-	passport.deserializeUser(function (id, done) {
-	  User.findById(id, function (err, user) {
-	    done(err, user);
-	  });
-	});
-
-	passport.use(new LocalStrategy(function (username, password, done) {
-	  User.findOne({ username: username }, function (err, existingUser) {
-	    if (err) {
-	      return done(err);
-	    };
-	    if (existingUser) {
-	      existingUser.likedCards.push({ link: "google.com", image: "https://i.redd.it/tngclbvdk46y.png" });
-	      return done(null, existingUser);
-	    };
-	    var newUser = new User({ username: username, password: password, likedCards: [], dislikedCards: [] });
-	    newUser.save(function (err, user) {
-	      if (err) {
-	        return done(err);
-	      } else {
-	        console.log('New user created: ' + user);
-	      }
-	      return done(err);
-	    });
-	  });
-	}));
 
 	app.post('/login', passport.authenticate('local', { successRedirect: '/',
 	  failureRedirect: '/login',
@@ -281,6 +326,12 @@
 /***/ function(module, exports) {
 
 	module.exports = require("mongoose");
+
+/***/ },
+/* 12 */
+/***/ function(module, exports) {
+
+	module.exports = require("express-session");
 
 /***/ }
 /******/ ]);
