@@ -95,6 +95,17 @@ app.get('/cards', (req, res) => {
   });
 });
 
+app.get('/likes', (req, res) => {
+  console.log(req.session);
+});
+
+app.post('/likes', (req, res) => {
+  console.log(req.session);
+});
+
+app.get('/dislikes', (req, res) => {
+
+});
 
 
 app.post('/category', (req, res) => {
@@ -105,30 +116,37 @@ app.post('/category', (req, res) => {
   });
 });
 
-app.post('/login', (req, res) => {
-  const username = req.body.username;
-  const password = req.body.password;
+passport.serializeUser(function(user, done) {
+  done(null, user.id);
+});
 
-  if (!username) { res.status(422).send({ error: 'Please enter an email address.' })}
-  if (!password) { res.status(422).send({ error: 'Please enter a password.' })}
+passport.deserializeUser(function(id, done) {
+  User.findById(id, function (err, user) {
+    done(err, user);
+  });
+});
 
+passport.use(new LocalStrategy(function(username, password, done) {
   User.findOne({username: username}, function (err, existingUser){
-    if (err) { return console.log(err) };
+    if (err) { return done(err) };
     if (existingUser) {
       existingUser.likedCards.push({link: "google.com", image: "https://i.redd.it/tngclbvdk46y.png"});
-      existingUser.save(function(err, user) {
-        console.log('Saved');
-      });
-      return console.log('Username in use: ' + existingUser); 
+      return done(null, existingUser); 
     };
     let newUser = new User({ username: username, password: password, likedCards: [], dislikedCards: [] });
     newUser.save(function(err, user) {
-      if (err) { return console.log(err); }
+      if (err) { return done(err); }
       else { console.log('New user created: ' + user); }
+    return done(err);
     });
   });
-  res.end();
-});
+}));
+
+app.post('/login',
+  passport.authenticate('local', { successRedirect: '/',
+                                   failureRedirect: '/login',
+                                   failureFlash: true })
+);
 
 app.get('/readUsers', (req, res) => {
   User.find(function (err, users){
