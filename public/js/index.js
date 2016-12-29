@@ -39,12 +39,13 @@
         chs.innerHTML = '';
         blue.forEach(function(element) {
           chs.innerHTML += 
-         "<div class='buttons'><i class='fa fa-heart' onclick='like(event)' aria-hidden='true'></i>" + 
+          "<div class='card'>" + 
+          "<div class='buttons'><i class='fa fa-heart' onclick='like(event)' aria-hidden='true'></i>" + 
           "<span>" + element.score + "</span><i class='fa fa-times' aria-hidden='true'></i></div>" + 
           "<a class='results' href='" + element.link + "'>" + 
             "<img alt='" + element.title + "' src='" + element.image +"'/>" +
             "<p>" + element.title + "</p>" + 
-          "</a>"
+          "</a></div>"
         });
       } else {
         console.log('Error: ' + oReq.status);
@@ -78,6 +79,7 @@
     oReq.send();
     oReq.onreadystatechange = function () {
     if (oReq.readyState === XMLHttpRequest.DONE && oReq.status === 200) {
+        console.log(oReq.responseText);
         var blue = JSON.parse(oReq.responseText);
         var chs = document.getElementById('cards');
         chs.innerHTML = '';

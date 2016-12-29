@@ -9,6 +9,7 @@ const Schema = mongoose.Schema;
 const passport = require('passport');
 const LocalStrategy = require('passport-local').Strategy;
 const session = require('express-session');
+const pug = require('pug');
 
 mongoose.Promise = global.Promise;
 mongoose.connect('mongodb://localhost/test', (err) => {
@@ -37,6 +38,7 @@ const UserSchema = new mongoose.Schema({
 const User = mongoose.model('User', UserSchema);
 
 const app = express();
+
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({
   extended: true
@@ -75,9 +77,19 @@ passport.use(new LocalStrategy(function(username, password, done) {
   });
 }));
 
-app.use(express.static(path.join(__dirname, '/public')));
+function loggedIn(req, res, next) {
+  if (req.user) {
+    next();
+  } else {
+    res.json('You are not logged in.');
+    return;
+  }
+}
 
-require('./routes')(app);
+app.use(express.static(path.join(__dirname, '/public')));
+app.set('view engine', 'pug');
+app.set('views', path.join(__dirname, '/public/views'));
+//require('./routes')(app);
 
 
 const getCardImages = (url) => {
@@ -122,7 +134,48 @@ const getCardImages = (url) => {
   );
 }
 
+const getThreads = () => {
+  return new Promise( (resolve, reject) =>
+    request("https://www.reddit.com/r/hearthstone", (error, res, body) => {
+      if(error) {
+        reject(console.log("Error: " + error));
+      }
 
+      const $ = cheerio.load(body);
+      const imageArray = [];
+
+      
+      $('div#siteTable > div.link:not(.stickied)').each( function( i, index ){
+        let image = $(this).find('a.thumbnail img').attr('src');
+        let score = $(this).find('div.score.unvoted').text().trim();
+        let user = $(this).find('a.author').text().trim();
+        let title = $(this).find('p.title').text().trim();
+        let link = $(this).find('a.comments').attr('href');
+        let thread = { image, score, user, title, link };
+        imageArray.push(thread);
+        return i < 4;
+      });
+      
+      imageArray.forEach( function(thread, index, arr) {
+        let img = thread.image;
+        if (img == undefined) {
+          console.log('Undefined');
+          return arr[index].image = "/views/logo.png";
+        };
+      });
+      resolve(imageArray);
+    })
+  );
+}
+
+app.get('/', (req, res) => { 
+  getThreads()
+  .then((result) => {
+    console.log(result);
+    //res.json(result);
+    res.render('index', {title: 'CHS', message: 'Custom HearthStone', threads: result});
+  });
+});
 
 app.get('/cards', (req, res) => {
   getCardImages("https://www.reddit.com/r/customhearthstone")
@@ -132,12 +185,13 @@ app.get('/cards', (req, res) => {
   });
 });
 
-app.get('/likes', (req, res) => {
+app.get('/likes', loggedIn, (req, res) => {
+  console.log(req.user.likedCards);
   res.json(req.user.likedCards);
   res.end();
 });
 
-app.post('/likes', (req, res) => {
+app.post('/likes', loggedIn, (req, res) => {
   req.user.likedCards.push(req.body);
   req.user.save(function(err, user) {
     if (err) { return console.log(err); }
@@ -146,7 +200,7 @@ app.post('/likes', (req, res) => {
   res.end();
 });
 
-app.get('/dislikes', (req, res) => {
+app.get('/dislikes', loggedIn, (req, res) => {
   req.user.dislikedCards.push(req.body);
   req.user.save(function(err, user) {
     if (err) { return console.log(err); }

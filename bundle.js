@@ -61,12 +61,7 @@
 	var LocalStrategy = __webpack_require__(6).Strategy;
 
 	var app = express();
-	module.exports = function (app) {
-
-	  app.get('/', function (req, res) {
-	    res.sendFile(path.join(__dirname, '/public/views/index.html'));
-	  });
-	};
+	module.exports = function (app) {};
 
 /***/ },
 /* 2 */
@@ -115,6 +110,7 @@
 	var passport = __webpack_require__(5);
 	var LocalStrategy = __webpack_require__(6).Strategy;
 	var session = __webpack_require__(12);
+	var pug = __webpack_require__(13);
 
 	mongoose.Promise = global.Promise;
 	mongoose.connect('mongodb://localhost/test', function (err) {
@@ -143,6 +139,7 @@
 	var User = mongoose.model('User', UserSchema);
 
 	var app = express();
+
 	app.use(bodyParser.json());
 	app.use(bodyParser.urlencoded({
 	  extended: true
@@ -186,9 +183,19 @@
 	  });
 	}));
 
-	app.use(express.static(path.join(__dirname, '/public')));
+	function loggedIn(req, res, next) {
+	  if (req.user) {
+	    next();
+	  } else {
+	    res.json('You are not logged in.');
+	    return;
+	  }
+	}
 
-	__webpack_require__(1)(app);
+	app.set('view engine', 'pug');
+	app.set('views', path.join(__dirname, '/public/views'));
+	//require('./routes')(app);
+
 
 	var getCardImages = function getCardImages(url) {
 	  return new Promise(function (resolve, reject) {
@@ -231,6 +238,47 @@
 	  });
 	};
 
+	var getThreads = function getThreads() {
+	  return new Promise(function (resolve, reject) {
+	    return request("https://www.reddit.com/r/hearthstone", function (error, res, body) {
+	      if (error) {
+	        reject(console.log("Error: " + error));
+	      }
+
+	      var $ = cheerio.load(body);
+	      var imageArray = [];
+
+	      $('div#siteTable > div.link:not(.stickied)').each(function (i, index) {
+	        var image = $(this).find('a.thumbnail img').attr('src');
+	        var score = $(this).find('div.score.unvoted').text().trim();
+	        var user = $(this).find('a.author').text().trim();
+	        var title = $(this).find('p.title').text().trim();
+	        var link = $(this).find('a.comments').attr('href');
+	        var thread = { image: image, score: score, user: user, title: title, link: link };
+	        imageArray.push(thread);
+	        return i < 4;
+	      });
+
+	      imageArray.forEach(function (thread, index, arr) {
+	        var img = thread.image;
+	        if (img == undefined) {
+	          console.log('Undefined');
+	          return arr[index].image = "/views/logo.png";
+	        };
+	      });
+	      resolve(imageArray);
+	    });
+	  });
+	};
+
+	app.get('/', function (req, res) {
+	  getThreads().then(function (result) {
+	    console.log(result);
+	    //res.json(result);
+	    res.render('index', { title: 'CHS', message: 'Custom HearthStone', threads: result });
+	  });
+	});
+
 	app.get('/cards', function (req, res) {
 	  getCardImages("https://www.reddit.com/r/customhearthstone").then(function (result) {
 	    res.json(result);
@@ -238,27 +286,13 @@
 	  });
 	});
 
-	app.get('/likes', function (req, res) {
-	  /*req.user.likedCards.forEach(function (card, index){
-	    let element = 
-	    "<div class='card'>" + 
-	      "<div class='buttons'><i class='fa fa-heart' onclick='like(event)' aria-hidden='true'></i>" + 
-	      "<span>" + card.score + "</span><i class='fa fa-times' aria-hidden='true'></i></div>" + 
-	      "<a class='results' href='" + card.link + "'>" + 
-	        "<img alt='" + card.title + "' src='" + card.image +"'/>" +
-	        "<p>" + card.title + "</p>" + 
-	    "</a></div>"
-	    cards.push(element);
-	  });
-	  res.header('Content-Type', 'text/html');
-	  res.write(cards[0]);
-	  */
-	  req.user.likedCards = [];
+	app.get('/likes', loggedIn, function (req, res) {
+	  console.log(req.user.likedCards);
 	  res.json(req.user.likedCards);
 	  res.end();
 	});
 
-	app.post('/likes', function (req, res) {
+	app.post('/likes', loggedIn, function (req, res) {
 	  req.user.likedCards.push(req.body);
 	  req.user.save(function (err, user) {
 	    if (err) {
@@ -270,7 +304,7 @@
 	  res.end();
 	});
 
-	app.get('/dislikes', function (req, res) {
+	app.get('/dislikes', loggedIn, function (req, res) {
 	  req.user.dislikedCards.push(req.body);
 	  req.user.save(function (err, user) {
 	    if (err) {
@@ -332,6 +366,12 @@
 /***/ function(module, exports) {
 
 	module.exports = require("express-session");
+
+/***/ },
+/* 13 */
+/***/ function(module, exports) {
+
+	module.exports = require("pug");
 
 /***/ }
 /******/ ]);

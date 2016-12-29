@@ -4,6 +4,10 @@ img, i {
 
 img { width: 100%;}
 
+.thumbnail {
+  width: 70px;
+}
+
 #cards {
   display: flex;
   justify-content: space-between;

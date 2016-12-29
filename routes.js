@@ -7,8 +7,6 @@ const LocalStrategy = require('passport-local').Strategy;
 const app = express();
 module.exports = function(app){
 
-app.get('/', (req, res) => { 
-  res.sendFile(path.join(__dirname, '/public/views/index.html'));
-});
+
 
 }
