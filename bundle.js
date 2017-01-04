@@ -241,9 +241,9 @@
 	  });
 	};
 
-	var getThreads = function getThreads() {
+	var getThreads = function getThreads(url) {
 	  return new Promise(function (resolve, reject) {
-	    return request("https://www.reddit.com/r/hearthstone", function (error, res, body) {
+	    return request(url, function (error, res, body) {
 	      if (error) {
 	        reject(console.log("Error: " + error));
 	      }
@@ -259,7 +259,7 @@
 	        var link = $(this).find('a.comments').attr('href');
 	        var thread = { image: image, score: score, user: user, title: title, link: link };
 	        imageArray.push(thread);
-	        return i < 4;
+	        return i < 2;
 	      });
 
 	      imageArray.forEach(function (thread, index, arr) {
@@ -274,11 +274,11 @@
 	};
 
 	app.get('/', function (req, res) {
-	  Promise.all([getThreads(), getCardImages("https://www.reddit.com/r/customhearthstone")]).then(function (results) {
-	    var threads = results[0];
-	    var cards = results[1];
+	  Promise.all([getThreads("https://www.reddit.com/r/hearthstone"), getThreads("https://www.reddit.com/r/rupaulsdragrace"), getCardImages("https://www.reddit.com/r/customhearthstone")]).then(function (results) {
+	    var threads = results[0].concat(results[1]);
+	    var cards = results[2];
 	    res.render('index', { threads: threads, hotCards: cards });
-	    console.log(threads, cards);
+	    console.log(threads);
 	  }).catch(function (error) {
 	    console.log('Error occured on /.');
 	    res.end();

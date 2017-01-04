@@ -136,9 +136,9 @@ const getCardImages = (url) => {
   );
 }
 
-const getThreads = () => {
+const getThreads = (url) => {
   return new Promise( (resolve, reject) =>
-    request("https://www.reddit.com/r/hearthstone", (error, res, body) => {
+    request(url, (error, res, body) => {
       if(error) {
         reject(console.log("Error: " + error));
       }
@@ -155,7 +155,7 @@ const getThreads = () => {
         let link = $(this).find('a.comments').attr('href');
         let thread = { image, score, user, title, link };
         imageArray.push(thread);
-        return i < 4;
+        return i < 2;
       });
       
       imageArray.forEach( function(thread, index, arr) {
@@ -170,12 +170,12 @@ const getThreads = () => {
 }
 
 app.get('/', (req, res) => { 
-  Promise.all([getThreads(), getCardImages("https://www.reddit.com/r/customhearthstone")])
+  Promise.all([getThreads("https://www.reddit.com/r/hearthstone"), getThreads("https://www.reddit.com/r/rupaulsdragrace"), getCardImages("https://www.reddit.com/r/customhearthstone")])
   .then((results) => {
-    const threads = results[0];
-    const cards = results[1];
+    const threads = results[0].concat(results[1]);
+    const cards = results[2];
     res.render('index', {threads: threads, hotCards: cards});
-    console.log(threads, cards);
+    console.log(threads);
   })
   .catch((error) => { 
     console.log('Error occured on /.');
