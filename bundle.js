@@ -170,7 +170,6 @@
 	      return done(err);
 	    };
 	    if (existingUser) {
-	      existingUser.likedCards.push({ link: "google.com", image: "https://i.redd.it/tngclbvdk46y.png" });
 	      return done(null, existingUser);
 	    };
 	    var newUser = new User({ username: username, password: password, likedCards: [], dislikedCards: [] });
@@ -187,10 +186,10 @@
 
 	function loggedIn(req, res, next) {
 	  if (req.user) {
-	    next();
+	    var username = req.user.username;
+	    next(username);
 	  } else {
-	    res.json('You are not logged in.');
-	    return;
+	    next();
 	  }
 	}
 
@@ -273,12 +272,12 @@
 	  });
 	};
 
-	app.get('/', function (req, res) {
+	app.get('/', loggedIn, function (req, res, username) {
+	  console.log(username);
 	  Promise.all([getThreads("https://www.reddit.com/r/hearthstone"), getThreads("https://www.reddit.com/r/rupaulsdragrace"), getCardImages("https://www.reddit.com/r/customhearthstone")]).then(function (results) {
 	    var threads = results[0].concat(results[1]);
 	    var cards = results[2];
-	    res.render('index', { threads: threads, hotCards: cards });
-	    console.log(threads);
+	    res.render('index', { threads: threads, hotCards: cards, username: username });
 	  }).catch(function (error) {
 	    console.log('Error occured on /.');
 	    res.end();
@@ -294,9 +293,8 @@
 	  });
 	});
 
-	app.get('/likes', loggedIn, function (req, res) {
-	  console.log(req.user.likedCards);
-	  res.json(req.user.likedCards);
+	app.get('/likes', loggedIn, function (req, res, username) {
+	  res.json(username);
 	  res.end();
 	});
 
@@ -333,8 +331,8 @@
 	  });
 	});
 
-	app.post('/login', passport.authenticate('local', { successRedirect: '/',
-	  failureRedirect: '/login',
+	app.post('/login', passport.authenticate('local', {
+	  successRedirect: '/',
 	  failureFlash: true }));
 
 	app.get('/readUsers', function (req, res) {

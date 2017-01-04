@@ -66,14 +66,11 @@ passport.deserializeUser(function(id, done) {
 passport.use(new LocalStrategy(function(username, password, done) {
   User.findOne({username: username}, function (err, existingUser){
     if (err) { return done(err) };
-    if (existingUser) {
-      existingUser.likedCards.push({link: "google.com", image: "https://i.redd.it/tngclbvdk46y.png"});
-      return done(null, existingUser); 
-    };
+    if (existingUser) { return done(null, existingUser) };
     let newUser = new User({ username: username, password: password, likedCards: [], dislikedCards: [] });
     newUser.save(function(err, user) {
-      if (err) { return done(err); }
-      else { console.log('New user created: ' + user); }
+      if (err) { return done(err) }
+      else { console.log('New user created: ' + user) }
     return done(err);
     });
   });
@@ -81,10 +78,10 @@ passport.use(new LocalStrategy(function(username, password, done) {
 
 function loggedIn(req, res, next) {
   if (req.user) {
-    next();
+    const username = req.user.username;
+    next(username);
   } else {
-    res.json('You are not logged in.');
-    return;
+    next();
   }
 }
 
@@ -169,13 +166,13 @@ const getThreads = (url) => {
   );
 }
 
-app.get('/', (req, res) => { 
+app.get('/', loggedIn, (req, res, username) => { 
+  console.log(username);
   Promise.all([getThreads("https://www.reddit.com/r/hearthstone"), getThreads("https://www.reddit.com/r/rupaulsdragrace"), getCardImages("https://www.reddit.com/r/customhearthstone")])
   .then((results) => {
     const threads = results[0].concat(results[1]);
     const cards = results[2];
-    res.render('index', {threads: threads, hotCards: cards});
-    console.log(threads);
+    res.render('index', {threads: threads, hotCards: cards, username: username});
   })
   .catch((error) => { 
     console.log('Error occured on /.');
@@ -192,9 +189,8 @@ app.get('/cards', (req, res) => {
   .catch((error) => console.log('Error occured on /cards.'));
 });
 
-app.get('/likes', loggedIn, (req, res) => {
-  console.log(req.user.likedCards);
-  res.json(req.user.likedCards);
+app.get('/likes', loggedIn, (req, res, username) => {
+  res.json(username);
   res.end();
 });
 
@@ -228,9 +224,9 @@ app.post('/category', (req, res) => {
 
 
 app.post('/login',
-  passport.authenticate('local', { successRedirect: '/',
-                                   failureRedirect: '/login',
-                                   failureFlash: true })
+  passport.authenticate('local', { 
+    successRedirect: '/',                               
+    failureFlash: true })
 );
 
 app.get('/readUsers', (req, res) => {
