@@ -26,8 +26,9 @@
         <section class="col-xs-12 text-center hearthstone">
             <p>Hearthstone</p>
             each item in threads
-                img.thumbnail(src= item.image)
-                p= item.title
+                div.thread
+                    img.thumbnail(src= item.image)
+                    p= item.title
         </section>
         <br>    
         <section class="col-xs-12 text-center competitivehearthstone">
@@ -45,7 +46,18 @@
             
         </section>
 
-        <div id="cards"></div>
+        <div id="cards">
+        each card in hotCards
+            <div class='card'> 
+                <div class='buttons'>
+                <i class='fa fa-heart' onclick='like(event)' aria-hidden='true'></i> 
+                span=card.score
+                <i class='fa fa-times' aria-hidden='true'></i></div>
+                a.results(href=card.link)
+                    img(src=card.image, alt=card.title)
+                    p= card.title
+            </div>
+        </div>
         <br> 
         
 

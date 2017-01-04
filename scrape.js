@@ -13,9 +13,11 @@ const pug = require('pug');
 
 mongoose.Promise = global.Promise;
 mongoose.connect('mongodb://localhost/test', (err) => {
-  if (!err) {
-    console.log('Connected');
-  };
+  if (err) {
+    console.log('Error connecting to Mongo.');
+  } else {
+      console.log('Connected.');
+  }
 });
 
 const UserSchema = new mongoose.Schema({
@@ -111,7 +113,7 @@ const getCardImages = (url) => {
         let link = $(this).find('a.comments').attr('href');
         let thread = { image, score, user, title, link };
         imageArray.push(thread);
-        return i < 4;
+        return i < 5;
       });
       
       imageArray.forEach( function(thread, index, arr) {
@@ -159,7 +161,6 @@ const getThreads = () => {
       imageArray.forEach( function(thread, index, arr) {
         let img = thread.image;
         if (img == undefined) {
-          console.log('Undefined');
           return arr[index].image = "/views/logo.png";
         };
       });
@@ -169,11 +170,16 @@ const getThreads = () => {
 }
 
 app.get('/', (req, res) => { 
-  getThreads()
-  .then((result) => {
-    console.log(result);
-    //res.json(result);
-    res.render('index', {title: 'CHS', message: 'Custom HearthStone', threads: result});
+  Promise.all([getThreads(), getCardImages("https://www.reddit.com/r/customhearthstone")])
+  .then((results) => {
+    const threads = results[0];
+    const cards = results[1];
+    res.render('index', {threads: threads, hotCards: cards});
+    console.log(threads, cards);
+  })
+  .catch((error) => { 
+    console.log('Error occured on /.');
+    res.end();
   });
 });
 
@@ -182,7 +188,8 @@ app.get('/cards', (req, res) => {
   .then((result) => {
     res.json(result);
     res.end();
-  });
+  })
+  .catch((error) => console.log('Error occured on /cards.'));
 });
 
 app.get('/likes', loggedIn, (req, res) => {
@@ -215,7 +222,8 @@ app.post('/category', (req, res) => {
   .then((result) => {
     res.json(result);
     res.end();
-  });
+  })
+  .catch((error) => console.log('Error occured on /category.'));
 });
 
 

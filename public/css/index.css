@@ -4,13 +4,21 @@ img, i {
 
 img { width: 100%;}
 
+.thread {
+  display: flex;
+  justify-content: space-between;
+}
+
 .thumbnail {
   width: 70px;
+  height: 55px;
 }
 
 #cards {
+  width: 60%;
   display: flex;
   justify-content: space-between;
+  margin: 0 auto;
 }
 
 .buttons {

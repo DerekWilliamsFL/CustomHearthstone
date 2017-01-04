@@ -114,9 +114,11 @@
 
 	mongoose.Promise = global.Promise;
 	mongoose.connect('mongodb://localhost/test', function (err) {
-	  if (!err) {
-	    console.log('Connected');
-	  };
+	  if (err) {
+	    console.log('Error connecting to Mongo.');
+	  } else {
+	    console.log('Connected.');
+	  }
 	});
 
 	var UserSchema = new mongoose.Schema({
@@ -192,6 +194,7 @@
 	  }
 	}
 
+	app.use(express.static(path.join(__dirname, '/public')));
 	app.set('view engine', 'pug');
 	app.set('views', path.join(__dirname, '/public/views'));
 	//require('./routes')(app);
@@ -215,7 +218,7 @@
 	        var link = $(this).find('a.comments').attr('href');
 	        var thread = { image: image, score: score, user: user, title: title, link: link };
 	        imageArray.push(thread);
-	        return i < 4;
+	        return i < 5;
 	      });
 
 	      imageArray.forEach(function (thread, index, arr) {
@@ -262,7 +265,6 @@
 	      imageArray.forEach(function (thread, index, arr) {
 	        var img = thread.image;
 	        if (img == undefined) {
-	          console.log('Undefined');
 	          return arr[index].image = "/views/logo.png";
 	        };
 	      });
@@ -272,10 +274,14 @@
 	};
 
 	app.get('/', function (req, res) {
-	  getThreads().then(function (result) {
-	    console.log(result);
-	    //res.json(result);
-	    res.render('index', { title: 'CHS', message: 'Custom HearthStone', threads: result });
+	  Promise.all([getThreads(), getCardImages("https://www.reddit.com/r/customhearthstone")]).then(function (results) {
+	    var threads = results[0];
+	    var cards = results[1];
+	    res.render('index', { threads: threads, hotCards: cards });
+	    console.log(threads, cards);
+	  }).catch(function (error) {
+	    console.log('Error occured on /.');
+	    res.end();
 	  });
 	});
 
@@ -283,6 +289,8 @@
 	  getCardImages("https://www.reddit.com/r/customhearthstone").then(function (result) {
 	    res.json(result);
 	    res.end();
+	  }).catch(function (error) {
+	    return console.log('Error occured on /cards.');
 	  });
 	});
 
@@ -320,6 +328,8 @@
 	  getCardImages(req.body.url).then(function (result) {
 	    res.json(result);
 	    res.end();
+	  }).catch(function (error) {
+	    return console.log('Error occured on /category.');
 	  });
 	});
 
