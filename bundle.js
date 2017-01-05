@@ -185,10 +185,11 @@
 	}));
 
 	function loggedIn(req, res, next) {
-	  if (req.user) {
-	    var username = req.user.username;
-	    next(username);
+	  if (req.user !== undefined) {
+	    req.session.username = req.user.username;
+	    next();
 	  } else {
+	    req.session.username = undefined;
 	    next();
 	  }
 	}
@@ -272,8 +273,10 @@
 	  });
 	};
 
-	app.get('/', loggedIn, function (req, res, username) {
-	  console.log(username);
+	app.get('/', loggedIn, function (req, res) {
+	  var username = req.session.username;
+	  console.log('Username' + username);
+	  console.log('Req.Session' + req.session);
 	  Promise.all([getThreads("https://www.reddit.com/r/hearthstone"), getThreads("https://www.reddit.com/r/rupaulsdragrace"), getCardImages("https://www.reddit.com/r/customhearthstone")]).then(function (results) {
 	    var threads = results[0].concat(results[1]);
 	    var cards = results[2];
@@ -294,7 +297,8 @@
 	});
 
 	app.get('/likes', loggedIn, function (req, res, username) {
-	  res.json(username);
+	  res.write(username);
+	  res.write(req.session);
 	  res.end();
 	});
 
@@ -333,7 +337,8 @@
 
 	app.post('/login', passport.authenticate('local', {
 	  successRedirect: '/',
-	  failureFlash: true }));
+	  failureFlash: true
+	}));
 
 	app.get('/readUsers', function (req, res) {
 	  User.find(function (err, users) {
