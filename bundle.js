@@ -112,7 +112,10 @@
 	var session = __webpack_require__(12);
 	var pug = __webpack_require__(13);
 	var jsonCache = fs.readFileSync('./reddit.json', 'utf-8');
-
+	var cacheTime = JSON.parse(jsonCache)[2];
+	console.log(cacheTime);
+	console.log(Date.now());
+	cacheTime + 1000 * 60 * 60 > Date.now() ? console.log('Cached') : console.log('Not cached');
 	mongoose.Promise = global.Promise;
 	mongoose.connect('mongodb://localhost/test', function (err) {
 	  err ? console.log('Error connecting to Mongo.') : console.log('Connected.');
@@ -192,6 +195,7 @@
 	}
 
 	function writeCache(json) {
+	  json[2] = Date.now();
 	  fs.writeFile('reddit.json', JSON.stringify(json), function (err) {
 	    err ? console.log('wrtieCache error.') : console.log('writeCache worked.');
 	  });
@@ -278,24 +282,27 @@
 
 	app.get('/', loggedIn, function (req, res) {
 	  var username = req.session.username;
-	  var cache = JSON.parse(jsonCache);
-	  var data = {
-	    threads: cache[0].concat(cache[1]),
-	    cards: cache[2]
-	  };
-	  res.render('index', { threads: data.threads, hotCards: data.cards, username: username });
-	  /*Promise.all([getThreads("https://www.reddit.com/r/hearthstone"), getThreads("https://www.reddit.com/r/rupaulsdragrace"), getCardImages("https://www.reddit.com/r/customhearthstone")])
-	  .then((results) => {
-	    
-	    const threads = results[0].concat(results[1]);
-	    const cards = results[2];
-	    writeCache(results);
-	    res.render('index', {threads: threads, hotCards: cards, username: username});
-	  })
-	  .catch((error) => { 
-	    console.log('Error occured on /.');
-	    res.end();
-	  });*/
+	  if (cacheTime + 1000 * 60 * 60 > Date.now()) {
+	    console.log('Using cache');
+	    var cache = JSON.parse(jsonCache);
+	    var data = {
+	      threads: cache[0].concat(cache[1]),
+	      cards: cache[2]
+	    };
+	    res.render('index', { threads: data.threads, hotCards: data.cards, username: username });
+	  } else {
+	    console.log('Scraping');
+	    Promise.all([getThreads("https://www.reddit.com/r/hearthstone"), getThreads("https://www.reddit.com/r/rupaulsdragrace"), getCardImages("https://www.reddit.com/r/customhearthstone")]).then(function (results) {
+	      var threads = results[0].concat(results[1]);
+	      var cards = results[2];
+	      writeCache(results);
+	      cacheTime = Date.now();
+	      res.render('index', { threads: threads, hotCards: cards, username: username });
+	    }).catch(function (error) {
+	      console.log('Error occured on /.');
+	      res.end();
+	    });
+	  }
 	});
 
 	app.get('/cards', function (req, res) {
