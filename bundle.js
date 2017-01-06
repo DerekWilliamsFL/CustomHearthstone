@@ -99,24 +99,20 @@
 
 	'use strict';
 
-	var request = __webpack_require__(8);
-	var cheerio = __webpack_require__(9);
 	var express = __webpack_require__(2);
-	var bodyParser = __webpack_require__(10);
+	var bodyParser = __webpack_require__(8);
 	var path = __webpack_require__(3);
 	var fs = __webpack_require__(4);
-	var mongoose = __webpack_require__(11);
+	var mongoose = __webpack_require__(9);
 	var Schema = mongoose.Schema;
 	var passport = __webpack_require__(5);
 	var LocalStrategy = __webpack_require__(6).Strategy;
-	var session = __webpack_require__(12);
-	var pug = __webpack_require__(13);
-	var jsonCache = fs.readFileSync('./reddit.json', 'utf-8');
-	var cacheTime = JSON.parse(jsonCache)[2];
-	console.log(cacheTime);
-	console.log(Date.now());
-	cacheTime + 1000 * 60 * 60 > Date.now() ? console.log('Cached') : console.log('Not cached');
-	mongoose.Promise = global.Promise;
+	var session = __webpack_require__(10);
+	var pug = __webpack_require__(11);
+	var cacheJson = fs.readFileSync('./reddit.json', 'utf-8');
+	var cacheTime = JSON.parse(cacheJson)[2];
+	var CHS = __webpack_require__(12);
+
 	mongoose.connect('mongodb://localhost/test', function (err) {
 	  err ? console.log('Error connecting to Mongo.') : console.log('Connected.');
 	});
@@ -184,16 +180,6 @@
 	  });
 	}));
 
-	function loggedIn(req, res, next) {
-	  if (req.user !== undefined) {
-	    req.session.username = req.user.username;
-	    next();
-	  } else {
-	    req.session.username = undefined;
-	    next();
-	  }
-	}
-
 	function writeCache(json) {
 	  json[2] = Date.now();
 	  fs.writeFile('reddit.json', JSON.stringify(json), function (err) {
@@ -206,97 +192,20 @@
 	app.set('views', path.join(__dirname, '/public/views'));
 	//require('./routes')(app);
 
-
-	var getCardImages = function getCardImages(url) {
-	  return new Promise(function (resolve, reject) {
-	    return request(url, function (error, res, body) {
-	      if (error) {
-	        reject(console.log('Error: ' + error));
-	      }
-
-	      var $ = cheerio.load(body);
-	      var imageArray = [];
-
-	      $('div#siteTable > div.link:not(.stickied)').each(function (i, index) {
-	        var image = $(this).attr('data-url');
-	        var score = $(this).find('div.score.unvoted').text().trim();
-	        var user = $(this).find('a.author').text().trim();
-	        var title = $(this).find('p.title').text().trim();
-	        var link = $(this).find('a.comments').attr('href');
-	        var thread = { image: image, score: score, user: user, title: title, link: link };
-	        imageArray.push(thread);
-	        return i < 5;
-	      });
-
-	      imageArray.forEach(function (thread, index, arr) {
-	        var img = thread.image;
-	        if (img.indexOf('/a/') >= 0 || img.indexOf('comments') >= 0) {
-	          return arr.splice(index, 1);
-	        };
-
-	        if (img.indexOf('i.imgur' === -1) && img.indexOf('imgur') > -1) {
-	          var code = img.substr(img.lastIndexOf('/'));
-	          var base = 'http://i.imgur.com';
-	          var png = '.png';
-	          if (code.indexOf('png') === -1) {
-	            arr[index].image = '' + base + code + png;
-	          }
-	        }
-	      });
-	      resolve(imageArray);
-	    });
-	  });
-	};
-
-	var getThreads = function getThreads(url) {
-	  return new Promise(function (resolve, reject) {
-	    return request(url, function (error, res, body) {
-	      if (error) {
-	        reject(console.log('Error: ' + error));
-	      }
-
-	      var $ = cheerio.load(body);
-	      var imageArray = [];
-
-	      $('div#siteTable > div.link:not(.stickied)').each(function (i, index) {
-	        var image = $(this).find('a.thumbnail img').attr('src');
-	        var score = $(this).find('div.score.unvoted').text().trim();
-	        var user = $(this).find('a.author').text().trim();
-	        var title = $(this).find('p.title').text().trim();
-	        var link = $(this).find('a.comments').attr('href');
-	        var thread = { image: image, score: score, user: user, title: title, link: link };
-	        imageArray.push(thread);
-	        return i < 2;
-	      });
-
-	      imageArray.forEach(function (thread, index, arr) {
-	        var img = thread.image;
-	        if (img == undefined) {
-	          return arr[index].image = "/views/logo.png";
-	        };
-	      });
-	      resolve(imageArray);
-	    });
-	  });
-	};
-
-	app.get('/', loggedIn, function (req, res) {
+	app.get('/', function (req, res) {
 	  var username = req.session.username;
 	  if (cacheTime + 1000 * 60 * 60 > Date.now()) {
-	    console.log('Using cache');
-	    var cache = JSON.parse(jsonCache);
+	    var cache = JSON.parse(cacheJson);
 	    var data = {
 	      threads: cache[0].concat(cache[1]),
 	      cards: cache[2]
 	    };
 	    res.render('index', { threads: data.threads, hotCards: data.cards, username: username });
 	  } else {
-	    console.log('Scraping');
-	    Promise.all([getThreads("https://www.reddit.com/r/hearthstone"), getThreads("https://www.reddit.com/r/rupaulsdragrace"), getCardImages("https://www.reddit.com/r/customhearthstone")]).then(function (results) {
+	    Promise.all([getThreads("https://www.reddit.com/r/hearthstone"), getThreads("https://www.reddit.com/r/rupaulsdragrace"), CHS.getCards("https://www.reddit.com/r/customhearthstone")]).then(function (results) {
 	      var threads = results[0].concat(results[1]);
 	      var cards = results[2];
 	      writeCache(results);
-	      cacheTime = Date.now();
 	      res.render('index', { threads: threads, hotCards: cards, username: username });
 	    }).catch(function (error) {
 	      console.log('Error occured on /.');
@@ -314,36 +223,28 @@
 	  });
 	});
 
-	app.get('/likes', loggedIn, function (req, res) {
+	app.get('/likes', CHS.checkUser, function (req, res) {
 	  res.json(req.user.likedCards);
 	  res.end();
 	});
 
-	app.post('/likes', loggedIn, function (req, res) {
+	app.post('/likes', CHS.checkUser, function (req, res) {
 	  req.user.likedCards.push(req.body);
 	  req.user.save(function (err, user) {
-	    if (err) {
-	      return console.log(err);
-	    } else {
-	      return console.log(req.user.likedCards);
-	    }
+	    err ? console.log(err) : console.log(req.user.likedCards);
 	  });
 	  res.end();
 	});
 
-	app.get('/dislikes', loggedIn, function (req, res) {
+	app.get('/dislikes', CHS.checkUser, function (req, res) {
 	  res.json(req.user.dislikedCards);
 	  res.end();
 	});
 
-	app.post('/dislikes', loggedIn, function (req, res) {
+	app.post('/dislikes', CHS.checkUser, function (req, res) {
 	  req.user.dislikedCards.push(req.body);
 	  req.user.save(function (err, user) {
-	    if (err) {
-	      return console.log(err);
-	    } else {
-	      return console.log(req.user.dislikedCards);
-	    }
+	    err ? console.log(err) : console.log(req.user.dislikedCards);
 	  });
 	  res.end();
 	});
@@ -364,8 +265,7 @@
 
 	app.get('/readUsers', function (req, res) {
 	  User.find(function (err, users) {
-	    if (err) return console.log(err);
-	    console.log('User accounts: ' + users);
+	    err ? console.log(err) : console.log('User accounts: ' + users);
 	  });
 	  res.end();
 	});
@@ -376,37 +276,129 @@
 /* 8 */
 /***/ function(module, exports) {
 
-	module.exports = require("request");
+	module.exports = require("body-parser");
 
 /***/ },
 /* 9 */
 /***/ function(module, exports) {
 
-	module.exports = require("cheerio");
+	module.exports = require("mongoose");
 
 /***/ },
 /* 10 */
 /***/ function(module, exports) {
 
-	module.exports = require("body-parser");
+	module.exports = require("express-session");
 
 /***/ },
 /* 11 */
 /***/ function(module, exports) {
 
-	module.exports = require("mongoose");
+	module.exports = require("pug");
 
 /***/ },
 /* 12 */
-/***/ function(module, exports) {
+/***/ function(module, exports, __webpack_require__) {
 
-	module.exports = require("express-session");
+	'use strict';
+
+	var request = __webpack_require__(13);
+	var cheerio = __webpack_require__(14);
+
+	var CHS = {
+	  checkUser: function loggedIn(req, res, next) {
+	    if (req.user !== undefined) {
+	      next();
+	    } else {
+	      res.json('You are not logged in');
+	    }
+	  },
+	  getCards: function getCards(url) {
+	    return new Promise(function (resolve, reject) {
+	      return request(url, function (error, res, body) {
+	        if (error) {
+	          reject(console.log('Error: ' + error));
+	        }
+
+	        var $ = cheerio.load(body);
+	        var imageArray = [];
+
+	        $('div#siteTable > div.link:not(.stickied)').each(function (i, index) {
+	          var image = $(this).attr('data-url');
+	          var score = $(this).find('div.score.unvoted').text().trim();
+	          var user = $(this).find('a.author').text().trim();
+	          var title = $(this).find('p.title').text().trim();
+	          var link = $(this).find('a.comments').attr('href');
+	          var thread = { image: image, score: score, user: user, title: title, link: link };
+	          imageArray.push(thread);
+	          return i < 5;
+	        });
+
+	        imageArray.forEach(function (thread, index, arr) {
+	          var img = thread.image;
+	          if (img.indexOf('/a/') >= 0 || img.indexOf('comments') >= 0) {
+	            return arr.splice(index, 1);
+	          };
+
+	          if (img.indexOf('i.imgur' === -1) && img.indexOf('imgur') > -1) {
+	            var code = img.substr(img.lastIndexOf('/'));
+	            var base = 'http://i.imgur.com';
+	            var png = '.png';
+	            if (code.indexOf('png') === -1) {
+	              arr[index].image = '' + base + code + png;
+	            }
+	          }
+	        });
+	        resolve(imageArray);
+	      });
+	    });
+	  },
+	  getThreads: function getThreads(url) {
+	    return new Promise(function (resolve, reject) {
+	      return request(url, function (error, res, body) {
+	        if (error) {
+	          reject(console.log('Error: ' + error));
+	        }
+
+	        var $ = cheerio.load(body);
+	        var imageArray = [];
+
+	        $('div#siteTable > div.link:not(.stickied)').each(function (i, index) {
+	          var image = $(this).find('a.thumbnail img').attr('src');
+	          var score = $(this).find('div.score.unvoted').text().trim();
+	          var user = $(this).find('a.author').text().trim();
+	          var title = $(this).find('p.title').text().trim();
+	          var link = $(this).find('a.comments').attr('href');
+	          var thread = { image: image, score: score, user: user, title: title, link: link };
+	          imageArray.push(thread);
+	          return i < 2;
+	        });
+
+	        imageArray.forEach(function (thread, index, arr) {
+	          var img = thread.image;
+	          if (img == undefined) {
+	            return arr[index].image = "/views/logo.png";
+	          };
+	        });
+	        resolve(imageArray);
+	      });
+	    });
+	  }
+	};
+
+	module.exports = CHS;
 
 /***/ },
 /* 13 */
 /***/ function(module, exports) {
 
-	module.exports = require("pug");
+	module.exports = require("request");
+
+/***/ },
+/* 14 */
+/***/ function(module, exports) {
+
+	module.exports = require("cheerio");
 
 /***/ }
 /******/ ]);
