@@ -10,14 +10,11 @@ const passport = require('passport');
 const LocalStrategy = require('passport-local').Strategy;
 const session = require('express-session');
 const pug = require('pug');
+let jsonCache = fs.readFileSync('./reddit.json', 'utf-8');
 
 mongoose.Promise = global.Promise;
 mongoose.connect('mongodb://localhost/test', (err) => {
-  if (err) {
-    console.log('Error connecting to Mongo.');
-  } else {
-      console.log('Connected.');
-  }
+  err ? console.log('Error connecting to Mongo.') : console.log('Connected.');
 });
 
 const UserSchema = new mongoose.Schema({
@@ -70,7 +67,7 @@ passport.use(new LocalStrategy(function(username, password, done) {
     let newUser = new User({ username: username, password: password, likedCards: [], dislikedCards: [] });
     newUser.save(function(err, user) {
       if (err) { return done(err) }
-      else { console.log('New user created: ' + user) }
+      else { console.log(`New user created: ${user}`) }
     return done(err);
     });
   });
@@ -86,6 +83,12 @@ function loggedIn(req, res, next) {
   }
 }
 
+function writeCache(json) {
+  fs.writeFile('reddit.json', JSON.stringify(json), (err) => {
+    err ? console.log('wrtieCache error.') : console.log('writeCache worked.');
+  });
+}
+
 app.use(express.static(path.join(__dirname, '/public')));
 app.set('view engine', 'pug');
 app.set('views', path.join(__dirname, '/public/views'));
@@ -96,7 +99,7 @@ const getCardImages = (url) => {
   return new Promise( (resolve, reject) =>
     request(url, (error, res, body) => {
       if(error) {
-        reject(console.log("Error: " + error));
+        reject(console.log(`Error: ${error}`));
       }
 
       const $ = cheerio.load(body);
@@ -138,7 +141,7 @@ const getThreads = (url) => {
   return new Promise( (resolve, reject) =>
     request(url, (error, res, body) => {
       if(error) {
-        reject(console.log("Error: " + error));
+        reject(console.log(`Error: ${error}`));
       }
 
       const $ = cheerio.load(body);
@@ -169,18 +172,24 @@ const getThreads = (url) => {
 
 app.get('/', loggedIn, (req, res) => { 
   const username = req.session.username;
-  console.log('Username' + username);
-  console.log('Req.Session' + req.session);
-  Promise.all([getThreads("https://www.reddit.com/r/hearthstone"), getThreads("https://www.reddit.com/r/rupaulsdragrace"), getCardImages("https://www.reddit.com/r/customhearthstone")])
+  const cache = JSON.parse(jsonCache);
+  const data = {
+    threads: cache[0].concat(cache[1]),
+    cards: cache[2]
+  }
+  res.render('index', {threads: data.threads, hotCards: data.cards, username: username});
+  /*Promise.all([getThreads("https://www.reddit.com/r/hearthstone"), getThreads("https://www.reddit.com/r/rupaulsdragrace"), getCardImages("https://www.reddit.com/r/customhearthstone")])
   .then((results) => {
+    
     const threads = results[0].concat(results[1]);
     const cards = results[2];
+    writeCache(results);
     res.render('index', {threads: threads, hotCards: cards, username: username});
   })
   .catch((error) => { 
     console.log('Error occured on /.');
     res.end();
-  });
+  });*/
 });
 
 app.get('/cards', (req, res) => {
@@ -192,9 +201,8 @@ app.get('/cards', (req, res) => {
   .catch((error) => console.log('Error occured on /cards.'));
 });
 
-app.get('/likes', loggedIn, (req, res, username) => {
-  res.write(username);
-  res.write(req.session);
+app.get('/likes', loggedIn, (req, res) => {
+  res.json(req.user.likedCards);
   res.end();
 });
 
@@ -208,6 +216,12 @@ app.post('/likes', loggedIn, (req, res) => {
 });
 
 app.get('/dislikes', loggedIn, (req, res) => {
+  res.json(req.user.dislikedCards);
+  res.end();
+});
+
+
+app.post('/dislikes', loggedIn, (req, res) => {
   req.user.dislikedCards.push(req.body);
   req.user.save(function(err, user) {
     if (err) { return console.log(err); }
@@ -236,7 +250,7 @@ app.post('/login', passport.authenticate('local', {
 app.get('/readUsers', (req, res) => {
   User.find(function (err, users){
     if (err) return console.log(err);
-    console.log('User accounts: ' + users);
+    console.log(`User accounts: ${users}`);
   });
   res.end();
 });

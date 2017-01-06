@@ -111,14 +111,11 @@
 	var LocalStrategy = __webpack_require__(6).Strategy;
 	var session = __webpack_require__(12);
 	var pug = __webpack_require__(13);
+	var jsonCache = fs.readFileSync('./reddit.json', 'utf-8');
 
 	mongoose.Promise = global.Promise;
 	mongoose.connect('mongodb://localhost/test', function (err) {
-	  if (err) {
-	    console.log('Error connecting to Mongo.');
-	  } else {
-	    console.log('Connected.');
-	  }
+	  err ? console.log('Error connecting to Mongo.') : console.log('Connected.');
 	});
 
 	var UserSchema = new mongoose.Schema({
@@ -194,6 +191,12 @@
 	  }
 	}
 
+	function writeCache(json) {
+	  fs.writeFile('reddit.json', JSON.stringify(json), function (err) {
+	    err ? console.log('wrtieCache error.') : console.log('writeCache worked.');
+	  });
+	}
+
 	app.use(express.static(path.join(__dirname, '/public')));
 	app.set('view engine', 'pug');
 	app.set('views', path.join(__dirname, '/public/views'));
@@ -204,7 +207,7 @@
 	  return new Promise(function (resolve, reject) {
 	    return request(url, function (error, res, body) {
 	      if (error) {
-	        reject(console.log("Error: " + error));
+	        reject(console.log('Error: ' + error));
 	      }
 
 	      var $ = cheerio.load(body);
@@ -245,7 +248,7 @@
 	  return new Promise(function (resolve, reject) {
 	    return request(url, function (error, res, body) {
 	      if (error) {
-	        reject(console.log("Error: " + error));
+	        reject(console.log('Error: ' + error));
 	      }
 
 	      var $ = cheerio.load(body);
@@ -275,16 +278,24 @@
 
 	app.get('/', loggedIn, function (req, res) {
 	  var username = req.session.username;
-	  console.log('Username' + username);
-	  console.log('Req.Session' + req.session);
-	  Promise.all([getThreads("https://www.reddit.com/r/hearthstone"), getThreads("https://www.reddit.com/r/rupaulsdragrace"), getCardImages("https://www.reddit.com/r/customhearthstone")]).then(function (results) {
-	    var threads = results[0].concat(results[1]);
-	    var cards = results[2];
-	    res.render('index', { threads: threads, hotCards: cards, username: username });
-	  }).catch(function (error) {
+	  var cache = JSON.parse(jsonCache);
+	  var data = {
+	    threads: cache[0].concat(cache[1]),
+	    cards: cache[2]
+	  };
+	  res.render('index', { threads: data.threads, hotCards: data.cards, username: username });
+	  /*Promise.all([getThreads("https://www.reddit.com/r/hearthstone"), getThreads("https://www.reddit.com/r/rupaulsdragrace"), getCardImages("https://www.reddit.com/r/customhearthstone")])
+	  .then((results) => {
+	    
+	    const threads = results[0].concat(results[1]);
+	    const cards = results[2];
+	    writeCache(results);
+	    res.render('index', {threads: threads, hotCards: cards, username: username});
+	  })
+	  .catch((error) => { 
 	    console.log('Error occured on /.');
 	    res.end();
-	  });
+	  });*/
 	});
 
 	app.get('/cards', function (req, res) {
@@ -296,9 +307,8 @@
 	  });
 	});
 
-	app.get('/likes', loggedIn, function (req, res, username) {
-	  res.write(username);
-	  res.write(req.session);
+	app.get('/likes', loggedIn, function (req, res) {
+	  res.json(req.user.likedCards);
 	  res.end();
 	});
 
@@ -315,6 +325,11 @@
 	});
 
 	app.get('/dislikes', loggedIn, function (req, res) {
+	  res.json(req.user.dislikedCards);
+	  res.end();
+	});
+
+	app.post('/dislikes', loggedIn, function (req, res) {
 	  req.user.dislikedCards.push(req.body);
 	  req.user.save(function (err, user) {
 	    if (err) {

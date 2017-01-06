@@ -23,14 +23,15 @@
                 <input type="submit" value="submit" />
             </form>
         else if typeof username === 'string'
-            p.check= username
+            p Hello, #{username}
         
         <section class="col-xs-12 text-center hearthstone">
             <p>Hearthstone</p>
             each item in threads
-                div.thread
-                    img.thumbnail(src= item.image)
-                    p= item.title
+                a(href= item.link)
+                    div.thread
+                        img.thumbnail(src= item.image)
+                        p= item.title
         </section>
         <br>    
         <section class="col-xs-12 text-center competitivehearthstone">
