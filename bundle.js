@@ -45,7 +45,7 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	__webpack_require__(1);
-	module.exports = __webpack_require__(7);
+	module.exports = __webpack_require__(12);
 
 
 /***/ },
@@ -59,9 +59,95 @@
 	var fs = __webpack_require__(4);
 	var passport = __webpack_require__(5);
 	var LocalStrategy = __webpack_require__(6).Strategy;
+	var CHS = __webpack_require__(7);
+	var cacheJson = fs.readFileSync('./reddit.json', 'utf-8');
+	var cacheTime = JSON.parse(cacheJson)[3];
+	var User = __webpack_require__(10);
 
 	var app = express();
-	module.exports = function (app) {};
+	module.exports = function (app) {
+
+	  app.get('/', function (req, res) {
+	    var username = void 0;
+	    req.user ? username = req.user.username : username = undefined;
+	    var oneHourCache = cacheTime + 1000 * 60 * 60 > Date.now();
+	    if (oneHourCache) {
+	      var cache = JSON.parse(cacheJson);
+	      var threads = cache[0].concat(cache[1]);
+	      var cards = cache[2];
+
+	      /* Template */res.render('index', { threads: threads, hotCards: cards, username: username });
+	      // React = res.json({"data": data, "username": username}); 
+	    } else {
+	      Promise.all([CHS.getThreads("hearthstone"), CHS.getThreads("competitivehearthstone"), CHS.getCards("customhearthstone")]).then(function (results) {
+	        var threads = results[0].concat(results[1]);
+	        var cards = results[2];
+	        CHS.writeCache(results);
+	        /* Template */res.render('index', { threads: threads, hotCards: cards, username: username });
+	        // React = res.json({"data": data, "username": username}); 
+	      }).catch(function (error) {
+	        console.log('Error occured on /.');
+	        res.end();
+	      });
+	    }
+	  });
+
+	  app.get('/cards', function (req, res) {
+	    CHS.getCards("customhearthstone").then(function (result) {
+	      res.json(result);
+	      res.end();
+	    }).catch(function (error) {
+	      return console.log('Error occured on /cards.');
+	    });
+	  });
+
+	  app.get('/likes', CHS.checkUser, function (req, res) {
+	    res.json(req.user.likedCards);
+	    res.end();
+	  });
+
+	  app.post('/likes', CHS.checkUser, function (req, res) {
+	    req.user.likedCards.push(req.body);
+	    req.user.save(function (err, user) {
+	      err ? console.log(err) : console.log(req.user.likedCards);
+	    });
+	    res.end();
+	  });
+
+	  app.get('/dislikes', CHS.checkUser, function (req, res) {
+	    res.json(req.user.dislikedCards);
+	    res.end();
+	  });
+
+	  app.post('/dislikes', CHS.checkUser, function (req, res) {
+	    req.user.dislikedCards.push(req.body);
+	    req.user.save(function (err, user) {
+	      err ? console.log(err) : console.log(req.user.dislikedCards);
+	    });
+	    res.end();
+	  });
+
+	  app.post('/category', function (req, res) {
+	    CHS.getCards(req.body.url).then(function (result) {
+	      res.json(result);
+	      res.end();
+	    }).catch(function (error) {
+	      return console.log('Error occured on /category.');
+	    });
+	  });
+
+	  app.post('/login', passport.authenticate('local', {
+	    successRedirect: '/',
+	    failureFlash: true
+	  }));
+
+	  app.get('/readUsers', function (req, res) {
+	    User.find(function (err, users) {
+	      err ? console.log(err) : console.log('User accounts: ' + users);
+	    });
+	    res.end();
+	  });
+	};
 
 /***/ },
 /* 2 */
@@ -99,213 +185,8 @@
 
 	'use strict';
 
-	var express = __webpack_require__(2);
-	var bodyParser = __webpack_require__(8);
-	var path = __webpack_require__(3);
-	var fs = __webpack_require__(4);
-	var mongoose = __webpack_require__(9);
-	var Schema = mongoose.Schema;
-	var passport = __webpack_require__(5);
-	var LocalStrategy = __webpack_require__(6).Strategy;
-	var session = __webpack_require__(10);
-	var pug = __webpack_require__(11);
-	var cacheJson = fs.readFileSync('./reddit.json', 'utf-8');
-	var cacheTime = JSON.parse(cacheJson)[3];
-	var CHS = __webpack_require__(12);
-
-	mongoose.Promise = global.Promise;
-	mongoose.connect('mongodb://localhost/test', function (err) {
-	  err ? console.log('Error connecting to Mongo.') : console.log('Connected.');
-	});
-
-	var UserSchema = new mongoose.Schema({
-	  username: { type: String, lowercase: true, required: true, unique: true },
-	  password: { type: String, lowercase: true, required: true, unique: true },
-	  likedCards: [{
-	    link: String,
-	    image: String,
-	    title: String,
-	    score: String
-	  }],
-	  dislikedCards: [{
-	    link: String,
-	    image: String,
-	    title: String,
-	    score: String
-	  }]
-	});
-
-	var User = mongoose.model('User', UserSchema);
-
-	var app = express();
-
-	app.use(bodyParser.json());
-	app.use(bodyParser.urlencoded({
-	  extended: true
-	}));
-	app.use(session({
-	  secret: 'wow',
-	  resave: false,
-	  saveUninitialized: true
-	}));
-	app.use(passport.initialize());
-	app.use(passport.session());
-
-	passport.serializeUser(function (user, done) {
-	  done(null, user.id);
-	});
-
-	passport.deserializeUser(function (id, done) {
-	  User.findById(id, function (err, user) {
-	    done(err, user);
-	  });
-	});
-
-	passport.use(new LocalStrategy(function (username, password, done) {
-	  User.findOne({ username: username }, function (err, existingUser) {
-	    if (err) {
-	      return done(err);
-	    };
-	    if (existingUser) {
-	      return done(null, existingUser);
-	    };
-	    var newUser = new User({ username: username, password: password, likedCards: [], dislikedCards: [] });
-	    newUser.save(function (err, user) {
-	      if (err) {
-	        return done(err);
-	      } else {
-	        console.log('New user created: ' + user);
-	      }
-	      return done(err);
-	    });
-	  });
-	}));
-
-	app.use(express.static(path.join(__dirname, '/public')));
-	app.set('view engine', 'pug');
-	app.set('views', path.join(__dirname, '/public/views'));
-	//require('./routes')(app);
-
-	app.get('/', function (req, res) {
-	  var username = void 0;
-	  req.user ? username = req.user.username : username = undefined;
-	  console.log(username);
-
-	  var oneHourCache = cacheTime + 1000 * 60 * 60 > Date.now();
-	  console.log('OHC ' + oneHourCache);
-	  if (oneHourCache) {
-	    var cache = JSON.parse(cacheJson);
-	    var threads = cache[0].concat(cache[1]);
-	    var cards = cache[2];
-
-	    /* Template */res.render('index', { threads: threads, hotCards: cards, username: username });
-	    // React = res.json({"data": data, "username": username}); 
-	  } else {
-	    Promise.all([CHS.getThreads("hearthstone"), CHS.getThreads("competitivehearthstone"), CHS.getCards("customhearthstone")]).then(function (results) {
-	      console.log(results[1]);
-	      var threads = results[0].concat(results[1]);
-	      var cards = results[2];
-	      CHS.writeCache(results);
-	      res.render('index', { threads: threads, hotCards: cards, username: username });
-	      // React = res.json({"data": data, "username": username}); 
-	    }).catch(function (error) {
-	      console.log('Error occured on /.');
-	      res.end();
-	    });
-	  }
-	});
-
-	app.get('/cards', function (req, res) {
-	  CHS.getCards("customhearthstone").then(function (result) {
-	    res.json(result);
-	    res.end();
-	  }).catch(function (error) {
-	    return console.log('Error occured on /cards.');
-	  });
-	});
-
-	app.get('/likes', CHS.checkUser, function (req, res) {
-	  res.json(req.user.likedCards);
-	  res.end();
-	});
-
-	app.post('/likes', CHS.checkUser, function (req, res) {
-	  console.log(req.body);
-	  req.user.likedCards.push(req.body);
-	  req.user.save(function (err, user) {
-	    err ? console.log(err) : console.log(req.user.likedCards);
-	  });
-	  res.end();
-	});
-
-	app.get('/dislikes', CHS.checkUser, function (req, res) {
-	  res.json(req.user.dislikedCards);
-	  res.end();
-	});
-
-	app.post('/dislikes', CHS.checkUser, function (req, res) {
-	  req.user.dislikedCards.push(req.body);
-	  req.user.save(function (err, user) {
-	    err ? console.log(err) : console.log(req.user.dislikedCards);
-	  });
-	  res.end();
-	});
-
-	app.post('/category', function (req, res) {
-	  CHS.getCards(req.body.url).then(function (result) {
-	    res.json(result);
-	    res.end();
-	  }).catch(function (error) {
-	    return console.log('Error occured on /category.');
-	  });
-	});
-
-	app.post('/login', passport.authenticate('local', {
-	  successRedirect: '/',
-	  failureFlash: true
-	}));
-
-	app.get('/readUsers', function (req, res) {
-	  User.find(function (err, users) {
-	    err ? console.log(err) : console.log('User accounts: ' + users);
-	  });
-	  res.end();
-	});
-
-	app.listen(4321);
-
-/***/ },
-/* 8 */
-/***/ function(module, exports) {
-
-	module.exports = require("body-parser");
-
-/***/ },
-/* 9 */
-/***/ function(module, exports) {
-
-	module.exports = require("mongoose");
-
-/***/ },
-/* 10 */
-/***/ function(module, exports) {
-
-	module.exports = require("express-session");
-
-/***/ },
-/* 11 */
-/***/ function(module, exports) {
-
-	module.exports = require("pug");
-
-/***/ },
-/* 12 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-
-	var request = __webpack_require__(13);
-	var cheerio = __webpack_require__(14);
+	var request = __webpack_require__(8);
+	var cheerio = __webpack_require__(9);
 	var fs = __webpack_require__(4);
 
 	var CHS = {
@@ -419,16 +300,144 @@
 	module.exports = CHS;
 
 /***/ },
-/* 13 */
+/* 8 */
 /***/ function(module, exports) {
 
 	module.exports = require("request");
 
 /***/ },
-/* 14 */
+/* 9 */
 /***/ function(module, exports) {
 
 	module.exports = require("cheerio");
+
+/***/ },
+/* 10 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	var mongoose = __webpack_require__(11);
+	var Schema = mongoose.Schema;
+
+	var UserSchema = new mongoose.Schema({
+	  username: { type: String, lowercase: true, required: true, unique: true },
+	  password: { type: String, lowercase: true, required: true, unique: true },
+	  likedCards: [{
+	    link: String,
+	    image: String,
+	    title: String,
+	    score: String
+	  }],
+	  dislikedCards: [{
+	    link: String,
+	    image: String,
+	    title: String,
+	    score: String
+	  }]
+	});
+
+	var User = mongoose.model('User', UserSchema);
+
+	module.exports = User;
+
+/***/ },
+/* 11 */
+/***/ function(module, exports) {
+
+	module.exports = require("mongoose");
+
+/***/ },
+/* 12 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	var express = __webpack_require__(2);
+	var bodyParser = __webpack_require__(13);
+	var path = __webpack_require__(3);
+	var fs = __webpack_require__(4);
+	var mongoose = __webpack_require__(11);
+	var Schema = mongoose.Schema;
+	var passport = __webpack_require__(5);
+	var LocalStrategy = __webpack_require__(6).Strategy;
+	var session = __webpack_require__(14);
+	var pug = __webpack_require__(15);
+	var User = __webpack_require__(10);
+
+	mongoose.Promise = global.Promise;
+	mongoose.connect('mongodb://localhost/test', function (err) {
+	  err ? console.log('Error connecting to Mongo.') : console.log('Connected.');
+	});
+
+	var app = express();
+
+	app.use(bodyParser.json());
+	app.use(bodyParser.urlencoded({
+	  extended: true
+	}));
+	app.use(session({
+	  secret: 'wow',
+	  resave: false,
+	  saveUninitialized: true
+	}));
+	app.use(passport.initialize());
+	app.use(passport.session());
+
+	passport.serializeUser(function (user, done) {
+	  done(null, user.id);
+	});
+
+	passport.deserializeUser(function (id, done) {
+	  User.findById(id, function (err, user) {
+	    done(err, user);
+	  });
+	});
+
+	passport.use(new LocalStrategy(function (username, password, done) {
+	  User.findOne({ username: username }, function (err, existingUser) {
+	    if (err) {
+	      return done(err);
+	    };
+	    if (existingUser) {
+	      return done(null, existingUser);
+	    };
+	    var newUser = new User({ username: username, password: password, likedCards: [], dislikedCards: [] });
+	    newUser.save(function (err, user) {
+	      if (err) {
+	        return done(err);
+	      } else {
+	        console.log('New user created: ' + user);
+	      }
+	      return done(err);
+	    });
+	  });
+	}));
+
+	app.use(express.static(path.join(__dirname, '/public')));
+	app.set('view engine', 'pug');
+	app.set('views', path.join(__dirname, '/public/views'));
+	__webpack_require__(1)(app);
+
+	app.listen(4321);
+
+/***/ },
+/* 13 */
+/***/ function(module, exports) {
+
+	module.exports = require("body-parser");
+
+/***/ },
+/* 14 */
+/***/ function(module, exports) {
+
+	module.exports = require("express-session");
+
+/***/ },
+/* 15 */
+/***/ function(module, exports) {
+
+	module.exports = require("pug");
 
 /***/ }
 /******/ ]);
