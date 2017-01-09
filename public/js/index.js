@@ -57,10 +57,10 @@
     var oReq = new XMLHttpRequest();
     oReq.open("POST", "http://localhost:4321/likes");
     oReq.setRequestHeader("Content-type", "application/json");
-    var link = event.path[2].childNodes[1].href;
-    var image = event.path[2].childNodes[1].firstChild.src;
-    var title = event.path[2].childNodes[1].text;
-    var score = event.path[2].childNodes[0].textContent;
+    var link = event.path[2].childNodes[2].href;
+    var image = event.path[2].childNodes[2].firstChild.src;
+    var title = event.path[2].childNodes[2].text;
+    var score = event.path[2].childNodes[1].textContent;
     var data = JSON.stringify({"link": link, "image": image, "title": title, "score": score});
     oReq.send(data);
     oReq.onreadystatechange = function () {

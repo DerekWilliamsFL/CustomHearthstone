@@ -110,9 +110,10 @@
 	var session = __webpack_require__(10);
 	var pug = __webpack_require__(11);
 	var cacheJson = fs.readFileSync('./reddit.json', 'utf-8');
-	var cacheTime = JSON.parse(cacheJson)[2];
+	var cacheTime = JSON.parse(cacheJson)[3];
 	var CHS = __webpack_require__(12);
 
+	mongoose.Promise = global.Promise;
 	mongoose.connect('mongodb://localhost/test', function (err) {
 	  err ? console.log('Error connecting to Mongo.') : console.log('Connected.');
 	});
@@ -180,33 +181,33 @@
 	  });
 	}));
 
-	function writeCache(json) {
-	  json[2] = Date.now();
-	  fs.writeFile('reddit.json', JSON.stringify(json), function (err) {
-	    err ? console.log('wrtieCache error.') : console.log('writeCache worked.');
-	  });
-	}
-
 	app.use(express.static(path.join(__dirname, '/public')));
 	app.set('view engine', 'pug');
 	app.set('views', path.join(__dirname, '/public/views'));
 	//require('./routes')(app);
 
 	app.get('/', function (req, res) {
-	  var username = req.session.username;
-	  if (cacheTime + 1000 * 60 * 60 > Date.now()) {
+	  var username = void 0;
+	  req.user ? username = req.user.username : username = undefined;
+	  console.log(username);
+
+	  var oneHourCache = cacheTime + 1000 * 60 * 60 > Date.now();
+	  console.log('OHC ' + oneHourCache);
+	  if (oneHourCache) {
 	    var cache = JSON.parse(cacheJson);
-	    var data = {
-	      threads: cache[0].concat(cache[1]),
-	      cards: cache[2]
-	    };
-	    res.render('index', { threads: data.threads, hotCards: data.cards, username: username });
+	    var threads = cache[0].concat(cache[1]);
+	    var cards = cache[2];
+
+	    /* Template */res.render('index', { threads: threads, hotCards: cards, username: username });
+	    // React = res.json({"data": data, "username": username}); 
 	  } else {
-	    Promise.all([getThreads("https://www.reddit.com/r/hearthstone"), getThreads("https://www.reddit.com/r/rupaulsdragrace"), CHS.getCards("https://www.reddit.com/r/customhearthstone")]).then(function (results) {
+	    Promise.all([CHS.getThreads("hearthstone"), CHS.getThreads("competitivehearthstone"), CHS.getCards("customhearthstone")]).then(function (results) {
+	      console.log(results[1]);
 	      var threads = results[0].concat(results[1]);
 	      var cards = results[2];
-	      writeCache(results);
+	      CHS.writeCache(results);
 	      res.render('index', { threads: threads, hotCards: cards, username: username });
+	      // React = res.json({"data": data, "username": username}); 
 	    }).catch(function (error) {
 	      console.log('Error occured on /.');
 	      res.end();
@@ -215,7 +216,7 @@
 	});
 
 	app.get('/cards', function (req, res) {
-	  getCardImages("https://www.reddit.com/r/customhearthstone").then(function (result) {
+	  CHS.getCards("customhearthstone").then(function (result) {
 	    res.json(result);
 	    res.end();
 	  }).catch(function (error) {
@@ -229,6 +230,7 @@
 	});
 
 	app.post('/likes', CHS.checkUser, function (req, res) {
+	  console.log(req.body);
 	  req.user.likedCards.push(req.body);
 	  req.user.save(function (err, user) {
 	    err ? console.log(err) : console.log(req.user.likedCards);
@@ -250,7 +252,7 @@
 	});
 
 	app.post('/category', function (req, res) {
-	  getCardImages(req.body.url).then(function (result) {
+	  CHS.getCards(req.body.url).then(function (result) {
 	    res.json(result);
 	    res.end();
 	  }).catch(function (error) {
@@ -304,6 +306,7 @@
 
 	var request = __webpack_require__(13);
 	var cheerio = __webpack_require__(14);
+	var fs = __webpack_require__(4);
 
 	var CHS = {
 	  checkUser: function loggedIn(req, res, next) {
@@ -313,9 +316,36 @@
 	      res.json('You are not logged in');
 	    }
 	  },
-	  getCards: function getCards(url) {
+	  formatCardLinks: function formatCardLinks(array) {
+	    array.forEach(function (thread, index, arr) {
+	      var img = thread.image;
+	      if (img.indexOf('/a/') >= 0 || img.indexOf('comments') >= 0) {
+	        return arr.splice(index, 1);
+	      };
+
+	      if (img.indexOf('i.imgur' === -1) && img.indexOf('imgur') > -1) {
+	        var code = img.substr(img.lastIndexOf('/'));
+	        var base = 'http://i.imgur.com';
+	        var png = '.png';
+	        if (code.indexOf('png') === -1) {
+	          arr[index].image = '' + base + code + png;
+	        }
+	      }
+	    });
+	    return array;
+	  },
+	  formatThreadLinks: function formatThreadLinks(array) {
+	    array.forEach(function (thread, index, arr) {
+	      var img = thread.image;
+	      if (img == undefined) {
+	        return arr[index].image = "/views/logo.png";
+	      };
+	    });
+	    return array;
+	  },
+	  getCards: function getCards(subreddit) {
 	    return new Promise(function (resolve, reject) {
-	      return request(url, function (error, res, body) {
+	      return request('https://www.reddit.com/r/' + subreddit, function (error, res, body) {
 	        if (error) {
 	          reject(console.log('Error: ' + error));
 	        }
@@ -323,65 +353,65 @@
 	        var $ = cheerio.load(body);
 	        var imageArray = [];
 
-	        $('div#siteTable > div.link:not(.stickied)').each(function (i, index) {
-	          var image = $(this).attr('data-url');
-	          var score = $(this).find('div.score.unvoted').text().trim();
-	          var user = $(this).find('a.author').text().trim();
-	          var title = $(this).find('p.title').text().trim();
-	          var link = $(this).find('a.comments').attr('href');
-	          var thread = { image: image, score: score, user: user, title: title, link: link };
-	          imageArray.push(thread);
-	          return i < 5;
-	        });
+	        CHS.scrapeCards(imageArray, body);
 
-	        imageArray.forEach(function (thread, index, arr) {
-	          var img = thread.image;
-	          if (img.indexOf('/a/') >= 0 || img.indexOf('comments') >= 0) {
-	            return arr.splice(index, 1);
-	          };
+	        CHS.formatCardLinks(imageArray);
 
-	          if (img.indexOf('i.imgur' === -1) && img.indexOf('imgur') > -1) {
-	            var code = img.substr(img.lastIndexOf('/'));
-	            var base = 'http://i.imgur.com';
-	            var png = '.png';
-	            if (code.indexOf('png') === -1) {
-	              arr[index].image = '' + base + code + png;
-	            }
-	          }
-	        });
 	        resolve(imageArray);
 	      });
 	    });
 	  },
-	  getThreads: function getThreads(url) {
+	  getThreads: function getThreads(subreddit) {
 	    return new Promise(function (resolve, reject) {
-	      return request(url, function (error, res, body) {
+	      return request('https://www.reddit.com/r/' + subreddit, function (error, res, body) {
 	        if (error) {
 	          reject(console.log('Error: ' + error));
 	        }
 
-	        var $ = cheerio.load(body);
 	        var imageArray = [];
 
-	        $('div#siteTable > div.link:not(.stickied)').each(function (i, index) {
-	          var image = $(this).find('a.thumbnail img').attr('src');
-	          var score = $(this).find('div.score.unvoted').text().trim();
-	          var user = $(this).find('a.author').text().trim();
-	          var title = $(this).find('p.title').text().trim();
-	          var link = $(this).find('a.comments').attr('href');
-	          var thread = { image: image, score: score, user: user, title: title, link: link };
-	          imageArray.push(thread);
-	          return i < 2;
-	        });
+	        CHS.scrapeThreads(imageArray, body);
 
-	        imageArray.forEach(function (thread, index, arr) {
-	          var img = thread.image;
-	          if (img == undefined) {
-	            return arr[index].image = "/views/logo.png";
-	          };
-	        });
+	        CHS.formatThreadLinks(imageArray);
+
 	        resolve(imageArray);
 	      });
+	    });
+	  },
+	  scrapeCards: function scrapeCards(array, body) {
+	    var $ = cheerio.load(body);
+
+	    $('div#siteTable > div.link:not(.stickied)').each(function (i, index) {
+	      var image = $(this).attr('data-url');
+	      var score = $(this).find('div.score.unvoted').text().trim();
+	      var user = $(this).find('a.author').text().trim();
+	      var title = $(this).find('p.title').text().trim();
+	      var link = $(this).find('a.comments').attr('href');
+	      var thread = { image: image, score: score, user: user, title: title, link: link };
+	      array.push(thread);
+	      return i < 3;
+	    });
+	    return array;
+	  },
+	  scrapeThreads: function scrapeThreads(array, body) {
+	    var $ = cheerio.load(body);
+
+	    $('div#siteTable > div.link:not(.stickied)').each(function (i, index) {
+	      var image = $(this).find('a.thumbnail img').attr('src');
+	      var score = $(this).find('div.score.unvoted').text().trim();
+	      var user = $(this).find('a.author').text().trim();
+	      var title = $(this).find('p.title').text().trim();
+	      var link = $(this).find('a.comments').attr('href');
+	      var thread = { image: image, score: score, user: user, title: title, link: link };
+	      array.push(thread);
+	      return i < 2;
+	    });
+	    return array;
+	  },
+	  writeCache: function writeCache(json) {
+	    json[3] = Date.now();
+	    fs.writeFile('reddit.json', JSON.stringify(json), function (err) {
+	      err ? console.log('writeCache error.') : console.log('writeCache worked.');
 	    });
 	  }
 	};

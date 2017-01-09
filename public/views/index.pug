@@ -26,7 +26,7 @@
             p Hello, #{username}
         
         <section class="col-xs-12 text-center hearthstone">
-            <p>Hearthstone</p>
+            //<p>Hearthstone</p>
             each item in threads
                 a(href= item.link)
                     div.thread
@@ -35,15 +35,14 @@
         </section>
         <br>    
         <section class="col-xs-12 text-center competitivehearthstone">
-            <p>Competitive Hearthstone</p>
+            //<p>Competitive Hearthstone</p>
         </section>
-        <br> 
         <section class="col-xs-12 text-center customhearthstone">
-            <p>Custom Hearthstone</p>
+            //<p>Custom Hearthstone</p>
             <button class="button button-primary" onclick="blue()">Hot</button>
-            <button class="button button-primary" onclick="red(event)" data-url="https://www.reddit.com/r/customhearthstone/top/?sort=top&t=day">Top</button>
-            <button class="button button-primary" onclick="red(event)" data-url="https://www.reddit.com/r/customhearthstone/controversial/?sort=controversial&t=day">Controversial</button>
-            <button class="button button-primary" onclick="red(event)" data-url="https://www.reddit.com/r/customhearthstone/new/?sort=new&t=day">New</button>
+            <button class="button button-primary" onclick="red(event)" data-url="customhearthstone/top/?sort=top&t=day">Top</button>
+            <button class="button button-primary" onclick="red(event)" data-url="controversial/?sort=controversial&t=day">Controversial</button>
+            <button class="button button-primary" onclick="red(event)" data-url="customhearthstone/new/?sort=new&t=day">New</button>
             <button class="button button-primary"><a href="/readUsers">Read Users</a></button>
             <button class="button button-primary" onclick="showLikes()">Liked</button>
             

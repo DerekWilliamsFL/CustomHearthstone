@@ -10,9 +10,10 @@ const LocalStrategy = require('passport-local').Strategy;
 const session = require('express-session');
 const pug = require('pug');
 const cacheJson = fs.readFileSync('./reddit.json', 'utf-8');
-const cacheTime = JSON.parse(cacheJson)[2];
-const CHS = require('./helpers.js');
+const cacheTime = JSON.parse(cacheJson)[3];
+const CHS = require('./CHS.js');
 
+mongoose.Promise = global.Promise;
 mongoose.connect('mongodb://localhost/test', (err) => {
   err ? console.log('Error connecting to Mongo.') : console.log('Connected.');
 });
@@ -73,34 +74,34 @@ passport.use(new LocalStrategy(function(username, password, done) {
   });
 }));
 
-function writeCache(json) {
-  json[2] = Date.now();
-  fs.writeFile('reddit.json', JSON.stringify(json), (err) => {
-    err ? console.log('wrtieCache error.') : console.log('writeCache worked.');
-  });
-}
-
 app.use(express.static(path.join(__dirname, '/public')));
 app.set('view engine', 'pug');
 app.set('views', path.join(__dirname, '/public/views'));
 //require('./routes')(app);
 
 app.get('/', (req, res) => { 
-  const username = req.session.username;
-  if (cacheTime + 1000 * 60 * 60 > Date.now()) {
+  let username;
+  req.user ? username = req.user.username : username = undefined;
+  console.log(username);
+
+  const oneHourCache = cacheTime + 1000 * 60 * 60 > Date.now();
+  console.log(`OHC ${oneHourCache}`);
+  if (oneHourCache) {
     const cache = JSON.parse(cacheJson);
-    const data = {
-      threads: cache[0].concat(cache[1]),
-      cards: cache[2]
-    }
-    res.render('index', {threads: data.threads, hotCards: data.cards, username: username});
+    const threads = cache[0].concat(cache[1]);
+    const cards = cache[2];
+    
+    /* Template */ res.render('index', {threads: threads, hotCards: cards, username: username});
+    // React = res.json({"data": data, "username": username}); 
   } else {
-    Promise.all([getThreads("https://www.reddit.com/r/hearthstone"), getThreads("https://www.reddit.com/r/rupaulsdragrace"), CHS.getCards("https://www.reddit.com/r/customhearthstone")])
+    Promise.all([CHS.getThreads("hearthstone"), CHS.getThreads("competitivehearthstone"), CHS.getCards("customhearthstone")])
     .then((results) => {
+      console.log(results[1]);
       const threads = results[0].concat(results[1]);
       const cards = results[2];
-      writeCache(results);
+      CHS.writeCache(results);
       res.render('index', {threads: threads, hotCards: cards, username: username});
+      // React = res.json({"data": data, "username": username}); 
     })
     .catch((error) => { 
       console.log('Error occured on /.');
@@ -110,7 +111,7 @@ app.get('/', (req, res) => {
 });
 
 app.get('/cards', (req, res) => {
-  getCardImages("https://www.reddit.com/r/customhearthstone")
+  CHS.getCards("customhearthstone")
   .then((result) => {
     res.json(result);
     res.end();
@@ -124,6 +125,7 @@ app.get('/likes', CHS.checkUser, (req, res) => {
 });
 
 app.post('/likes', CHS.checkUser, (req, res) => {
+  console.log(req.body);
   req.user.likedCards.push(req.body);
   req.user.save(function(err, user) {
     err ? console.log(err) : console.log(req.user.likedCards);
@@ -147,7 +149,7 @@ app.post('/dislikes', CHS.checkUser, (req, res) => {
 
 
 app.post('/category', (req, res) => {
-  getCardImages(req.body.url)
+  CHS.getCards(req.body.url)
   .then((result) => {
     res.json(result);
     res.end();

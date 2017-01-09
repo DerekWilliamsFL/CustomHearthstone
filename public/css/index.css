@@ -15,10 +15,19 @@ img { width: 100%;}
 }
 
 #cards {
-  width: 60%;
+  width: 85%;
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   margin: 0 auto;
+}
+
+.card {
+  width: 33%;
+}
+
+.results img {
+  padding-top: 5px;
 }
 
 .buttons {
