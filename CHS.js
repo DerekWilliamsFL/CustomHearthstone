@@ -3,13 +3,7 @@ const cheerio = require('cheerio');
 const fs = require('fs');
 
 const CHS = {
-  checkUser: function loggedIn(req, res, next) {
-    if (req.user !== undefined) {
-      next();
-    } else {
-      res.json('You are not logged in');
-    }
-  },
+
   formatCardLinks: (array) => {
     array.forEach( function(thread, index, arr) {
       let img = thread.image;
@@ -37,7 +31,7 @@ const CHS = {
     });
     return array;
   },
-  getCards: (subreddit) => {
+  getCards: (subreddit = "customhearthstone") => {
     return new Promise( (resolve, reject) =>
       request(`https://www.reddit.com/r/${subreddit}`, (error, res, body) => {
         if(error) {

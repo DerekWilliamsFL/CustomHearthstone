@@ -1,119 +1,77 @@
-(function() {
-  window.blue = function () {
-    var oReq = new XMLHttpRequest();
-    oReq.open("GET", "http://localhost:4321/cards");
-    oReq.setRequestHeader("Content-type", "application/json");
-    oReq.send();
-    oReq.onreadystatechange = function () {
-    if (oReq.readyState === XMLHttpRequest.DONE && oReq.status === 200) {
-        var blue = JSON.parse(oReq.responseText);
-        var chs = document.getElementById('cards');
-        chs.innerHTML = '';
-        blue.forEach(function(element) {
-          chs.innerHTML += 
-          "<div class='card'>" + 
-          "<div class='buttons'><i class='fa fa-heart' onclick='like(event)' aria-hidden='true'></i>" + 
-          "<span>" + element.score + "</span><i class='fa fa-times' aria-hidden='true'></i></div>" + 
-          "<a class='results' href='" + element.link + "'>" + 
-            "<img alt='" + element.title + "' src='" + element.image +"'/>" +
-            "<p>" + element.title + "</p>" + 
-          "</a></div>"
-        });
-      } else {
-        console.log('Error: ' + oReq.status);
-      }
-    }
-  }
+const CHS = {
 
-  window.red = function (event) {
-    var oReq = new XMLHttpRequest();
-    oReq.open("POST", "http://localhost:4321/category");
-    oReq.setRequestHeader("Content-type", "application/json");
-    var url = event.target.attributes[2].nodeValue;
-    var data = JSON.stringify({url: url});
-    oReq.send(data);
-    oReq.onreadystatechange = function () {
-    if (oReq.readyState === XMLHttpRequest.DONE && oReq.status === 200) {
-        var blue = JSON.parse(oReq.responseText);
-        var chs = document.getElementById('cards');
-        chs.innerHTML = '';
-        blue.forEach(function(element) {
-          chs.innerHTML += 
-          "<div class='card'>" + 
-          "<div class='buttons'><i class='fa fa-heart' onclick='like(event)' aria-hidden='true'></i>" + 
-          "<span>" + element.score + "</span><i class='fa fa-times' aria-hidden='true'></i></div>" + 
-          "<a class='results' href='" + element.link + "'>" + 
-            "<img alt='" + element.title + "' src='" + element.image +"'/>" +
-            "<p>" + element.title + "</p>" + 
-          "</a></div>"
-        });
-      } else {
-        console.log('Error: ' + oReq.status);
-      }
-    }
-  }
+  renderCards: (array) => {
+    const chs = document.getElementById('cards');
+    chs.innerHTML = '';
+    array.forEach(function(element) {
+      chs.innerHTML += 
+      `<div class='card'>
+        <div class='buttons'>
+          <i class='fa fa-heart' onclick='like(event)' aria-hidden='true'></i>
+          <span>${element.score}</span>
+          <i class='fa fa-times' aria-hidden='true'></i>
+        </div> 
+        <a class='results' href='element.link'>
+          <img alt='${element.title}' src='${element.image}'/>
+          <p>${element.title}</p>
+        </a>
+      </div>`
+    });
+  },
 
-  window.like = function (event) {
-    var oReq = new XMLHttpRequest();
-    oReq.open("POST", "http://localhost:4321/likes");
-    oReq.setRequestHeader("Content-type", "application/json");
-    var link = event.path[2].childNodes[2].href;
-    var image = event.path[2].childNodes[2].firstChild.src;
-    var title = event.path[2].childNodes[2].text;
-    var score = event.path[2].childNodes[1].textContent;
-    var data = JSON.stringify({"link": link, "image": image, "title": title, "score": score});
-    oReq.send(data);
-    oReq.onreadystatechange = function () {
-    if (oReq.readyState === XMLHttpRequest.DONE && oReq.status === 200) {
-      //var blue = JSON.parse(oReq.responseText);
-      } else {
-        //console.log('Error: ' + oReq.status);
-      }
-    }
-  }
+  getCategory: (event) => {
+    fetch('http://localhost:4321/category', {
+       method: 'POST',
+       headers: new Headers({ 'Content-Type': 'application/json' }),
+       body: JSON.stringify({url: event.target.attributes[2].nodeValue})
+    })
+    .then((response => response.json()))
+    .then((response => CHS.renderCards(response)))
+    .catch((err => console.log(err)))
+  },
 
-  window.showLikes = function () {
-    var oReq = new XMLHttpRequest();
-    oReq.open("GET", "http://localhost:4321/likes");
-    oReq.setRequestHeader("Content-type", "application/json");
-    oReq.send();
-    oReq.onreadystatechange = function () {
-    if (oReq.readyState === XMLHttpRequest.DONE && oReq.status === 200) {
-        console.log(oReq.responseText);
-        var blue = JSON.parse(oReq.responseText);
-        var chs = document.getElementById('cards');
-        chs.innerHTML = '';
-        blue.forEach(function(element) {
-          chs.innerHTML += 
-          "<div class='card'>" + 
-          "<div class='buttons'><i class='fa fa-heart' onclick='like(event)' aria-hidden='true'></i>" + 
-          "<span>" + element.score + "</span><i class='fa fa-times' aria-hidden='true'></i></div>" + 
-          "<a class='results' href='" + element.link + "'>" + 
-            "<img alt='" + element.title + "' src='" + element.image +"'/>" +
-            "<p>" + element.title + "</p>" + 
-          "</a></div>"
-        });
-      } else {
-        console.log('Error: ' + oReq.status);
-      }
-    }
-  }
+  like: (event) => {
+    const link = event.path[2].childNodes[2].href;
+    const image = event.path[2].childNodes[2].firstChild.src;
+    const title = event.path[2].childNodes[2].text;
+    const score = event.path[2].childNodes[1].textContent;
+    const data = JSON.stringify({"link": link, "image": image, "title": title, "score": score});
+    fetch('http://localhost:4321/likes', {
+      method: 'POST',
+      headers: new Headers({ 'Content-Type': 'application/json' }),
+      body: data
+    })
+    .then((response => response.json()))
+    .then((response => console.log('Liked! <3')))
+    .catch((err => console.log(err)))
+  },
 
-  window.dislike = function (event) {
-    var oReq = new XMLHttpRequest();
-    oReq.open("POST", "http://localhost:4321/dislikes");
-    oReq.setRequestHeader("Content-type", "application/json");
-    var url = event.target.attributes[2].nodeValue;
-    var data = JSON.stringify({url: url});
-    oReq.send(data);
-    oReq.onreadystatechange = function () {
-    if (oReq.readyState === XMLHttpRequest.DONE && oReq.status === 200) {
-       // var blue = JSON.parse(oReq.responseText);
-      } else {
-       // console.log('Error: ' + oReq.status);
-      }
-    }
+  showLikes: () => {
+    fetch('http://localhost:4321/likes', {
+       method: 'GET',
+       headers: new Headers({ 'Content-Type': 'application/json' }),
+    })
+    .then((response => response.json()))
+    .then((response => CHS.renderCards(response)))
+    .catch((err => console.log(err)))
+  },
+
+  dislike: (event) => {
+    const link = event.path[2].childNodes[2].href;
+    const image = event.path[2].childNodes[2].firstChild.src;
+    const title = event.path[2].childNodes[2].text;
+    const score = event.path[2].childNodes[1].textContent;
+    const data = JSON.stringify({"link": link, "image": image, "title": title, "score": score});
+
+    fetch('http://localhost:4321/dislikes', {
+      method: 'POST',
+      headers: new Headers({ 'Content-Type': 'application/json' }),
+      body: data
+    })
+    .then((response => response.json()))
+    .then((response => console.log('Disliked! X')))
+    .catch((err => console.log(err)))
   }
-})();
+};
 
 

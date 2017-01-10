@@ -39,12 +39,12 @@
         </section>
         <section class="col-xs-12 text-center customhearthstone">
             //<p>Custom Hearthstone</p>
-            <button class="button button-primary" onclick="blue()">Hot</button>
-            <button class="button button-primary" onclick="red(event)" data-url="customhearthstone/top/?sort=top&t=day">Top</button>
-            <button class="button button-primary" onclick="red(event)" data-url="controversial/?sort=controversial&t=day">Controversial</button>
-            <button class="button button-primary" onclick="red(event)" data-url="customhearthstone/new/?sort=new&t=day">New</button>
+            <button class="button button-primary" onclick="CHS.getCategory(event)">Hot</button>
+            <button class="button button-primary" onclick="CHS.getCategory(event)" data-url="customhearthstone/top/?sort=top&t=day">Top</button>
+            <button class="button button-primary" onclick="CHS.getCategory(event)" data-url="customhearthstone/controversial/?sort=controversial&t=day">Controversial</button>
+            <button class="button button-primary" onclick="CHS.getCategory(event)" data-url="customhearthstone/new/?sort=new&t=day">New</button>
             <button class="button button-primary"><a href="/readUsers">Read Users</a></button>
-            <button class="button button-primary" onclick="showLikes()">Liked</button>
+            <button class="button button-primary" onclick="CHS.showLikes()">Liked</button>
             
         </section>
 
@@ -52,7 +52,7 @@
         each card in hotCards
             <div class='card'> 
                 <div class='buttons'>
-                <i class='fa fa-heart' onclick='like(event)' aria-hidden='true'></i> 
+                <i class='fa fa-heart' onclick='CHS.like(event)' aria-hidden='true'></i> 
                 span=card.score
                 <i class='fa fa-times' aria-hidden='true'></i></div>
                 a.results(href=card.link)

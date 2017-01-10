@@ -65,6 +65,15 @@
 	var User = __webpack_require__(10);
 
 	var app = express();
+
+	function checkUser(req, res, next) {
+	  if (req.user !== undefined) {
+	    next();
+	  } else {
+	    res.json('You are not logged in');
+	  }
+	}
+
 	module.exports = function (app) {
 
 	  app.get('/', function (req, res) {
@@ -75,56 +84,18 @@
 	      var cache = JSON.parse(cacheJson);
 	      var threads = cache[0].concat(cache[1]);
 	      var cards = cache[2];
-
-	      /* Template */res.render('index', { threads: threads, hotCards: cards, username: username });
-	      // React = res.json({"data": data, "username": username}); 
+	      res.render('index', { threads: threads, hotCards: cards, username: username });
 	    } else {
-	      Promise.all([CHS.getThreads("hearthstone"), CHS.getThreads("competitivehearthstone"), CHS.getCards("customhearthstone")]).then(function (results) {
+	      Promise.all([CHS.getThreads("hearthstone"), CHS.getThreads("competitivehs"), CHS.getCards("customhearthstone")]).then(function (results) {
 	        var threads = results[0].concat(results[1]);
 	        var cards = results[2];
 	        CHS.writeCache(results);
-	        /* Template */res.render('index', { threads: threads, hotCards: cards, username: username });
-	        // React = res.json({"data": data, "username": username}); 
+	        res.render('index', { threads: threads, hotCards: cards, username: username });
 	      }).catch(function (error) {
 	        console.log('Error occured on /.');
 	        res.end();
 	      });
 	    }
-	  });
-
-	  app.get('/cards', function (req, res) {
-	    CHS.getCards("customhearthstone").then(function (result) {
-	      res.json(result);
-	      res.end();
-	    }).catch(function (error) {
-	      return console.log('Error occured on /cards.');
-	    });
-	  });
-
-	  app.get('/likes', CHS.checkUser, function (req, res) {
-	    res.json(req.user.likedCards);
-	    res.end();
-	  });
-
-	  app.post('/likes', CHS.checkUser, function (req, res) {
-	    req.user.likedCards.push(req.body);
-	    req.user.save(function (err, user) {
-	      err ? console.log(err) : console.log(req.user.likedCards);
-	    });
-	    res.end();
-	  });
-
-	  app.get('/dislikes', CHS.checkUser, function (req, res) {
-	    res.json(req.user.dislikedCards);
-	    res.end();
-	  });
-
-	  app.post('/dislikes', CHS.checkUser, function (req, res) {
-	    req.user.dislikedCards.push(req.body);
-	    req.user.save(function (err, user) {
-	      err ? console.log(err) : console.log(req.user.dislikedCards);
-	    });
-	    res.end();
 	  });
 
 	  app.post('/category', function (req, res) {
@@ -134,6 +105,32 @@
 	    }).catch(function (error) {
 	      return console.log('Error occured on /category.');
 	    });
+	  });
+
+	  app.get('/dislikes', checkUser, function (req, res) {
+	    res.json(req.user.dislikedCards);
+	    res.end();
+	  });
+
+	  app.post('/dislikes', checkUser, function (req, res) {
+	    req.user.dislikedCards.push(req.body);
+	    req.user.save(function (err, user) {
+	      err ? console.log(err) : console.log(req.user.dislikedCards);
+	    });
+	    res.end();
+	  });
+
+	  app.get('/likes', checkUser, function (req, res) {
+	    res.json(req.user.likedCards);
+	    res.end();
+	  });
+
+	  app.post('/likes', checkUser, function (req, res) {
+	    req.user.likedCards.push(req.body);
+	    req.user.save(function (err, user) {
+	      err ? console.log(err) : console.log(req.user.likedCards);
+	    });
+	    res.end();
 	  });
 
 	  app.post('/login', passport.authenticate('local', {
@@ -190,13 +187,7 @@
 	var fs = __webpack_require__(4);
 
 	var CHS = {
-	  checkUser: function loggedIn(req, res, next) {
-	    if (req.user !== undefined) {
-	      next();
-	    } else {
-	      res.json('You are not logged in');
-	    }
-	  },
+
 	  formatCardLinks: function formatCardLinks(array) {
 	    array.forEach(function (thread, index, arr) {
 	      var img = thread.image;
@@ -224,7 +215,9 @@
 	    });
 	    return array;
 	  },
-	  getCards: function getCards(subreddit) {
+	  getCards: function getCards() {
+	    var subreddit = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "customhearthstone";
+
 	    return new Promise(function (resolve, reject) {
 	      return request('https://www.reddit.com/r/' + subreddit, function (error, res, body) {
 	        if (error) {

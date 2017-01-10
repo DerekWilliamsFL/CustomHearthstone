@@ -9,6 +9,15 @@ const cacheTime = JSON.parse(cacheJson)[3];
 const User = require('./models/User');
 
 const app = express();
+
+function checkUser(req, res, next) {
+  if (req.user !== undefined) {
+    next();
+  } else {
+    res.json('You are not logged in');
+  }
+}
+
 module.exports = function(app){
 
   app.get('/', (req, res) => { 
@@ -19,17 +28,14 @@ module.exports = function(app){
       const cache = JSON.parse(cacheJson);
       const threads = cache[0].concat(cache[1]);
       const cards = cache[2];
-      
-      /* Template */ res.render('index', {threads: threads, hotCards: cards, username: username});
-      // React = res.json({"data": data, "username": username}); 
+      res.render('index', {threads: threads, hotCards: cards, username: username});
     } else {
-      Promise.all([CHS.getThreads("hearthstone"), CHS.getThreads("competitivehearthstone"), CHS.getCards("customhearthstone")])
+      Promise.all([CHS.getThreads("hearthstone"), CHS.getThreads("competitivehs"), CHS.getCards("customhearthstone")])
       .then((results) => {
         const threads = results[0].concat(results[1]);
         const cards = results[2];
         CHS.writeCache(results);
-        /* Template */ res.render('index', {threads: threads, hotCards: cards, username: username});
-        // React = res.json({"data": data, "username": username}); 
+        res.render('index', {threads: threads, hotCards: cards, username: username});
       })
       .catch((error) => { 
         console.log('Error occured on /.');
@@ -37,43 +43,6 @@ module.exports = function(app){
       });
     }
   });
-
-  app.get('/cards', (req, res) => {
-    CHS.getCards("customhearthstone")
-    .then((result) => {
-      res.json(result);
-      res.end();
-    })
-    .catch((error) => console.log('Error occured on /cards.'));
-  });
-
-  app.get('/likes', CHS.checkUser, (req, res) => {
-    res.json(req.user.likedCards);
-    res.end();
-  });
-
-  app.post('/likes', CHS.checkUser, (req, res) => {
-    req.user.likedCards.push(req.body);
-    req.user.save(function(err, user) {
-      err ? console.log(err) : console.log(req.user.likedCards);
-    });
-    res.end();
-  });
-
-  app.get('/dislikes', CHS.checkUser, (req, res) => {
-    res.json(req.user.dislikedCards);
-    res.end();
-  });
-
-
-  app.post('/dislikes', CHS.checkUser, (req, res) => {
-    req.user.dislikedCards.push(req.body);
-    req.user.save(function(err, user) {
-      err ? console.log(err) : console.log(req.user.dislikedCards);
-    });
-    res.end();
-  });
-
 
   app.post('/category', (req, res) => {
     CHS.getCards(req.body.url)
@@ -84,6 +53,31 @@ module.exports = function(app){
     .catch((error) => console.log('Error occured on /category.'));
   });
 
+  app.get('/dislikes', checkUser, (req, res) => {
+    res.json(req.user.dislikedCards);
+    res.end();
+  });
+
+  app.post('/dislikes', checkUser, (req, res) => {
+    req.user.dislikedCards.push(req.body);
+    req.user.save(function(err, user) {
+      err ? console.log(err) : console.log(req.user.dislikedCards);
+    });
+    res.end();
+  });
+
+  app.get('/likes', checkUser, (req, res) => {
+    res.json(req.user.likedCards);
+    res.end();
+  });
+
+  app.post('/likes', checkUser, (req, res) => {
+    req.user.likedCards.push(req.body);
+    req.user.save(function(err, user) {
+      err ? console.log(err) : console.log(req.user.likedCards);
+    });
+    res.end();
+  });
 
   app.post('/login', passport.authenticate('local', { 
       successRedirect: '/',                               
