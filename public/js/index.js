@@ -11,7 +11,7 @@ const CHS = {
           <span>${element.score}</span>
           <i class='fa fa-times' aria-hidden='true'></i>
         </div> 
-        <a class='results' href='element.link'>
+        <a class='results' href='${element.link}'>
           <img alt='${element.title}' src='${element.image}'/>
           <p>${element.title}</p>
         </a>

@@ -7,9 +7,6 @@ const CHS = {
   formatCardLinks: (array) => {
     array.forEach( function(thread, index, arr) {
       let img = thread.image;
-      if ((img.indexOf('/a/') >= 0) || (img.indexOf('comments') >= 0)) {
-        return arr.splice(index, 1);
-      };
 
       if(img.indexOf('i.imgur' === -1 ) && (img.indexOf('imgur') > -1)){
         let code = img.substr(img.lastIndexOf('/'));
@@ -31,7 +28,7 @@ const CHS = {
     });
     return array;
   },
-  getCards: (subreddit = "customhearthstone") => {
+  getCards: (subreddit) => {
     return new Promise( (resolve, reject) =>
       request(`https://www.reddit.com/r/${subreddit}`, (error, res, body) => {
         if(error) {
@@ -71,13 +68,14 @@ const CHS = {
 
     $('div#siteTable > div.link:not(.stickied)').each( function( i, index ){
       let image = $(this).attr('data-url');
+      if ((image.indexOf('/a/') >= 0)) { return; }
       let score = $(this).find('div.score.unvoted').text().trim();
       let user = $(this).find('a.author').text().trim();
-      let title = $(this).find('p.title').text().trim();
+      let title = $(this).find('a.title').text().trim();
       let link = $(this).find('a.comments').attr('href');
       let thread = { image, score, user, title, link };
       array.push(thread);
-      return i < 3;
+      return i < 2;
     });
     return array;
   },
@@ -88,7 +86,7 @@ const CHS = {
       let image = $(this).find('a.thumbnail img').attr('src');
       let score = $(this).find('div.score.unvoted').text().trim();
       let user = $(this).find('a.author').text().trim();
-      let title = $(this).find('p.title').text().trim();
+      let title = $(this).find('a.title').text().trim();
       let link = $(this).find('a.comments').attr('href');
       let thread = { image, score, user, title, link };
       array.push(thread);

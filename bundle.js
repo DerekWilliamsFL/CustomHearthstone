@@ -191,9 +191,6 @@
 	  formatCardLinks: function formatCardLinks(array) {
 	    array.forEach(function (thread, index, arr) {
 	      var img = thread.image;
-	      if (img.indexOf('/a/') >= 0 || img.indexOf('comments') >= 0) {
-	        return arr.splice(index, 1);
-	      };
 
 	      if (img.indexOf('i.imgur' === -1) && img.indexOf('imgur') > -1) {
 	        var code = img.substr(img.lastIndexOf('/'));
@@ -204,6 +201,7 @@
 	        }
 	      }
 	    });
+	    console.log(JSON.stringify(array));
 	    return array;
 	  },
 	  formatThreadLinks: function formatThreadLinks(array) {
@@ -215,9 +213,7 @@
 	    });
 	    return array;
 	  },
-	  getCards: function getCards() {
-	    var subreddit = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "customhearthstone";
-
+	  getCards: function getCards(subreddit) {
 	    return new Promise(function (resolve, reject) {
 	      return request('https://www.reddit.com/r/' + subreddit, function (error, res, body) {
 	        if (error) {
@@ -257,14 +253,18 @@
 
 	    $('div#siteTable > div.link:not(.stickied)').each(function (i, index) {
 	      var image = $(this).attr('data-url');
+	      if (image.indexOf('/a/') >= 0) {
+	        return;
+	      }
 	      var score = $(this).find('div.score.unvoted').text().trim();
 	      var user = $(this).find('a.author').text().trim();
-	      var title = $(this).find('p.title').text().trim();
+	      var title = $(this).find('a.title').text().trim();
 	      var link = $(this).find('a.comments').attr('href');
 	      var thread = { image: image, score: score, user: user, title: title, link: link };
 	      array.push(thread);
-	      return i < 3;
+	      return i < 2;
 	    });
+	    console.log(array);
 	    return array;
 	  },
 	  scrapeThreads: function scrapeThreads(array, body) {
@@ -274,7 +274,7 @@
 	      var image = $(this).find('a.thumbnail img').attr('src');
 	      var score = $(this).find('div.score.unvoted').text().trim();
 	      var user = $(this).find('a.author').text().trim();
-	      var title = $(this).find('p.title').text().trim();
+	      var title = $(this).find('a.title').text().trim();
 	      var link = $(this).find('a.comments').attr('href');
 	      var thread = { image: image, score: score, user: user, title: title, link: link };
 	      array.push(thread);

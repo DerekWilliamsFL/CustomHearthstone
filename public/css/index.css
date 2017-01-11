@@ -1,3 +1,8 @@
+body {
+  background-color: #FBC02D;
+  padding: 8px;
+}
+
 img, i {
   cursor: pointer;
 }
@@ -7,9 +12,14 @@ img { width: 100%;}
 .thread {
   display: flex;
   justify-content: space-between;
+  align-items: center; 
+  background-color: #4FC3F7;
+  margin: 8px;
+  padding: 8px;
+  border-radius: 3px;
 }
 
-.thumbnail {
+.icon {
   width: 70px;
   height: 55px;
 }
@@ -34,13 +44,6 @@ img { width: 100%;}
   cursor: default;
   display: flex;
   justify-content: space-around;
-}
-
-.hearthstone,
-.customhearthstone,
-.competitivehearthstone {
-  height: 100px;
-  margin: 20px 0;
 }
 
 .fa {

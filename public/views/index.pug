@@ -30,7 +30,7 @@
             each item in threads
                 a(href= item.link)
                     div.thread
-                        img.thumbnail(src= item.image)
+                        img.icon(src= item.image)
                         p= item.title
         </section>
         <br>    
@@ -39,7 +39,7 @@
         </section>
         <section class="col-xs-12 text-center customhearthstone">
             //<p>Custom Hearthstone</p>
-            <button class="button button-primary" onclick="CHS.getCategory(event)">Hot</button>
+            <button class="button button-primary" onclick="CHS.getCategory(event)" data-url="customhearthstone">Hot</button>
             <button class="button button-primary" onclick="CHS.getCategory(event)" data-url="customhearthstone/top/?sort=top&t=day">Top</button>
             <button class="button button-primary" onclick="CHS.getCategory(event)" data-url="customhearthstone/controversial/?sort=controversial&t=day">Controversial</button>
             <button class="button button-primary" onclick="CHS.getCategory(event)" data-url="customhearthstone/new/?sort=new&t=day">New</button>
