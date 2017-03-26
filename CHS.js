@@ -43,6 +43,7 @@ const CHS = {
         CHS.formatCardLinks(imageArray);
 
         resolve(imageArray);
+
       })
     );
   }, 
@@ -75,8 +76,8 @@ const CHS = {
       let link = $(this).find('a.comments').attr('href');
       let thread = { image, score, user, title, link };
       array.push(thread);
-      return i < 2;
     });
+    
     return array;
   },
   scrapeThreads: (array, body) => {

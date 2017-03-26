@@ -45,7 +45,7 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	__webpack_require__(1);
-	module.exports = __webpack_require__(12);
+	module.exports = __webpack_require__(13);
 
 
 /***/ },
@@ -63,6 +63,7 @@
 	var cacheJson = fs.readFileSync('./reddit.json', 'utf-8');
 	var cacheTime = JSON.parse(cacheJson)[3];
 	var User = __webpack_require__(10);
+	var Snoo = __webpack_require__(12);
 
 	var app = express();
 
@@ -77,6 +78,7 @@
 	module.exports = function (app) {
 
 	  app.get('/', function (req, res) {
+
 	    var username = void 0;
 	    req.user ? username = req.user.username : username = undefined;
 	    var oneHourCache = cacheTime + 1000 * 60 * 60 > Date.now();
@@ -201,7 +203,6 @@
 	        }
 	      }
 	    });
-	    console.log(JSON.stringify(array));
 	    return array;
 	  },
 	  formatThreadLinks: function formatThreadLinks(array) {
@@ -262,9 +263,8 @@
 	      var link = $(this).find('a.comments').attr('href');
 	      var thread = { image: image, score: score, user: user, title: title, link: link };
 	      array.push(thread);
-	      return i < 2;
 	    });
-	    console.log(array);
+
 	    return array;
 	  },
 	  scrapeThreads: function scrapeThreads(array, body) {
@@ -342,20 +342,26 @@
 
 /***/ },
 /* 12 */
+/***/ function(module, exports) {
+
+	module.exports = require("snoowrap");
+
+/***/ },
+/* 13 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
 	var express = __webpack_require__(2);
-	var bodyParser = __webpack_require__(13);
+	var bodyParser = __webpack_require__(14);
 	var path = __webpack_require__(3);
 	var fs = __webpack_require__(4);
 	var mongoose = __webpack_require__(11);
 	var Schema = mongoose.Schema;
 	var passport = __webpack_require__(5);
 	var LocalStrategy = __webpack_require__(6).Strategy;
-	var session = __webpack_require__(14);
-	var pug = __webpack_require__(15);
+	var session = __webpack_require__(15);
+	var pug = __webpack_require__(16);
 	var User = __webpack_require__(10);
 
 	mongoose.Promise = global.Promise;
@@ -415,19 +421,19 @@
 	app.listen(4321);
 
 /***/ },
-/* 13 */
+/* 14 */
 /***/ function(module, exports) {
 
 	module.exports = require("body-parser");
 
 /***/ },
-/* 14 */
+/* 15 */
 /***/ function(module, exports) {
 
 	module.exports = require("express-session");
 
 /***/ },
-/* 15 */
+/* 16 */
 /***/ function(module, exports) {
 
 	module.exports = require("pug");

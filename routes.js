@@ -7,6 +7,7 @@ const CHS = require('./CHS.js');
 const cacheJson = fs.readFileSync('./reddit.json', 'utf-8');
 const cacheTime = JSON.parse(cacheJson)[3];
 const User = require('./models/User');
+const Snoo = require('snoowrap');
 
 const app = express();
 
@@ -20,7 +21,8 @@ function checkUser(req, res, next) {
 
 module.exports = function(app){
 
-  app.get('/', (req, res) => { 
+  app.get('/', (req, res) => {
+
     let username;
     req.user ? username = req.user.username : username = undefined;
     const oneHourCache = cacheTime + 1000 * 60 * 60 > Date.now();

@@ -3,19 +3,21 @@ const CHS = {
   renderCards: (array) => {
     const chs = document.getElementById('cards');
     chs.innerHTML = '';
+    console.log(array);
     array.forEach(function(element) {
-      chs.innerHTML += 
-      `<div class='card'>
-        <div class='buttons'>
-          <i class='fa fa-heart' onclick='like(event)' aria-hidden='true'></i>
-          <span>${element.score}</span>
-          <i class='fa fa-times' aria-hidden='true'></i>
-        </div> 
-        <a class='results' href='${element.link}'>
-          <img alt='${element.title}' src='${element.image}'/>
-          <p>${element.title}</p>
-        </a>
-      </div>`
+      var blue = $($.parseHTML(
+        `<div class='card'>
+          <div class='buttons'>
+            <i class='fa fa-heart' onclick='CHS.like(event)' aria-hidden='true'></i>
+            <span>${element.score}</span>
+            <i class='fa fa-times' aria-hidden='true'></i>
+          </div> 
+          <a class='results' href='${element.link}'>
+            <img alt='${element.title}' src='${element.image}'/>
+            <p>${element.title}</p>
+          </a>
+        </div>`));
+        chs.append(blue);
     });
   },
 
@@ -35,6 +37,7 @@ const CHS = {
     const image = event.path[2].childNodes[2].firstChild.src;
     const title = event.path[2].childNodes[2].text;
     const score = event.path[2].childNodes[1].textContent;
+
     const data = JSON.stringify({"link": link, "image": image, "title": title, "score": score});
     fetch('http://localhost:4321/likes', {
       method: 'POST',
