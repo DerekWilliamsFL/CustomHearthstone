@@ -67,6 +67,9 @@
 
 	var app = express();
 
+	//For testing purposes
+	app.set('etag', false);
+
 	function checkUser(req, res, next) {
 	  if (req.user !== undefined) {
 	    next();
@@ -82,22 +85,25 @@
 	    var username = void 0;
 	    req.user ? username = req.user.username : username = undefined;
 	    var oneHourCache = cacheTime + 1000 * 60 * 60 > Date.now();
-	    if (oneHourCache) {
-	      var cache = JSON.parse(cacheJson);
-	      var threads = cache[0].concat(cache[1]);
-	      var cards = cache[2];
-	      res.render('index', { threads: threads, hotCards: cards, username: username });
-	    } else {
-	      Promise.all([CHS.getThreads("hearthstone"), CHS.getThreads("competitivehs"), CHS.getCards("customhearthstone")]).then(function (results) {
-	        var threads = results[0].concat(results[1]);
-	        var cards = results[2];
-	        CHS.writeCache(results);
-	        res.render('index', { threads: threads, hotCards: cards, username: username });
-	      }).catch(function (error) {
-	        console.log('Error occured on /.');
-	        res.end();
-	      });
-	    }
+	    // if (oneHourCache) {
+	    //   const cache = JSON.parse(cacheJson);
+	    //   const threads = cache[0].concat(cache[1]);
+	    //   const cards = cache[2];
+	    //   res.render('index', {threads: threads, hotCards: cards, username: username});
+	    // } else {
+	    Promise.all([CHS.getThreads("hearthstone"), CHS.getThreads("competitivehs"), CHS.getCards("customhearthstone")]).then(function (results) {
+	      var threads = results[0].concat(results[1]);
+	      var cards = results[2];
+	      console.log(results);
+	      res.json(results);
+	      CHS.writeCache(results);
+
+	      //res.render('index', {threads: threads, hotCards: cards, username: username});
+	    }).catch(function (error) {
+	      console.log('Error occured on /.');
+	      res.end();
+	    });
+	    //}
 	  });
 
 	  app.post('/category', function (req, res) {
