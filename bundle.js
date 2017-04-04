@@ -67,9 +67,6 @@
 
 	var app = express();
 
-	//For testing purposes
-	app.set('etag', false);
-
 	function checkUser(req, res, next) {
 	  if (req.user !== undefined) {
 	    next();
@@ -81,29 +78,28 @@
 	module.exports = function (app) {
 
 	  app.get('/', function (req, res) {
+	    res.sendFile('public/views/index.html', { root: __dirname });
+	  });
+
+	  app.get('/threads', function (req, res) {
 
 	    var username = void 0;
 	    req.user ? username = req.user.username : username = undefined;
 	    var oneHourCache = cacheTime + 1000 * 60 * 60 > Date.now();
-	    // if (oneHourCache) {
-	    //   const cache = JSON.parse(cacheJson);
-	    //   const threads = cache[0].concat(cache[1]);
-	    //   const cards = cache[2];
-	    //   res.render('index', {threads: threads, hotCards: cards, username: username});
-	    // } else {
-	    Promise.all([CHS.getThreads("hearthstone"), CHS.getThreads("competitivehs"), CHS.getCards("customhearthstone")]).then(function (results) {
-	      var threads = results[0].concat(results[1]);
-	      var cards = results[2];
-	      console.log(results);
-	      res.json(results);
-	      CHS.writeCache(results);
-
-	      //res.render('index', {threads: threads, hotCards: cards, username: username});
-	    }).catch(function (error) {
-	      console.log('Error occured on /.');
+	    if (oneHourCache) {
+	      var cache = JSON.parse(cacheJson);
+	      res.json(cache);
 	      res.end();
-	    });
-	    //}
+	    } else {
+	      Promise.all([CHS.getThreads("hearthstone"), CHS.getThreads("competitivehs"), CHS.getCards("customhearthstone")]).then(function (results) {
+	        res.json(results);
+	        CHS.writeCache(results);
+	        res.end();
+	      }).catch(function (error) {
+	        console.log('Error occured on /.');
+	        res.end();
+	      });
+	    }
 	  });
 
 	  app.post('/category', function (req, res) {
@@ -420,8 +416,8 @@
 	}));
 
 	app.use(express.static(path.join(__dirname, '/public')));
-	app.set('view engine', 'pug');
-	app.set('views', path.join(__dirname, '/public/views'));
+	app.set('view engine', 'html');
+
 	__webpack_require__(1)(app);
 
 	app.listen(4321);

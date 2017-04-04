@@ -1,0 +1,58 @@
+<!doctype html>
+<html class="no-js" lang="">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="x-ua-compatible" content="ie=edge">
+        <title>CHS</title>
+        <meta name="description" content="Hearthstone stuff">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+        <link rel="apple-touch-icon" href="apple-touch-icon.png">
+        <link rel="stylesheet" href="css/FontAwesome/css/font-awesome.min.css">
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+        
+        <link rel="stylesheet" href="css/index.css">
+        <script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
+        <script src="js/index.js"></script>
+
+    </head>
+    <body>
+
+        <form action="/login" method="POST">
+            <input type="text" name="username" />
+            <input type="password" name="password" />
+            <input type="submit" value="submit" />
+        </form>
+
+        <section class="col-xs-12 text-center hearthstone">
+            <p>Hearthstone</p>
+        </section>
+        <br>    
+        <section class="col-xs-12 text-center competitivehearthstone">
+            //<p>Competitive Hearthstone</p>
+        </section>
+        <section class="col-xs-12 text-center customhearthstone">
+            //<p>Custom Hearthstone</p>
+            <button class="button button-primary" onclick="CHS.getCategory(event)" data-url="customhearthstone">Hot</button>
+            <button class="button button-primary" onclick="CHS.getCategory(event)" data-url="customhearthstone/top/?sort=top&t=day">Top</button>
+            <button class="button button-primary" onclick="CHS.getCategory(event)" data-url="customhearthstone/controversial/?sort=controversial&t=day">Controversial</button>
+            <button class="button button-primary" onclick="CHS.getCategory(event)" data-url="customhearthstone/new/?sort=new&t=day">New</button>
+            <button class="button button-primary"><a href="/readUsers">Read Users</a></button>
+            <button class="button button-primary" onclick="CHS.showLikes()">Liked</button>
+            <button class="button button-primary" onclick="CHS.getThreads()">Refresh</button>
+            
+        </section>
+
+        <div id="cards">
+            <div class='card'> 
+                <div class='buttons'>
+                <i class='fa fa-heart' onclick='CHS.like(event)' aria-hidden='true'></i> 
+                <i class='fa fa-times' aria-hidden='true'></i></div>
+            </div>
+        </div>
+        
+        
+
+        </body>
+       
+</html>

@@ -55,8 +55,8 @@ passport.use(new LocalStrategy(function(username, password, done) {
 }));
 
 app.use(express.static(path.join(__dirname, '/public')));
-app.set('view engine', 'pug');
-app.set('views', path.join(__dirname, '/public/views'));
+app.set('view engine', 'html');
+
 require('./routes')(app);
 
 

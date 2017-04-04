@@ -11,9 +11,6 @@ const Snoo = require('snoowrap');
 
 const app = express();
 
-//For testing purposes
-app.set('etag', false);
-
 function checkUser(req, res, next) {
   if (req.user !== undefined) {
     next();
@@ -25,32 +22,30 @@ function checkUser(req, res, next) {
 module.exports = function(app){
 
   app.get('/', (req, res) => {
+      res.sendFile('public/views/index.html', { root: __dirname });
+  });
+
+  app.get('/threads', (req, res) => {
 
     let username;
     req.user ? username = req.user.username : username = undefined;
     const oneHourCache = cacheTime + 1000 * 60 * 60 > Date.now();
-    // if (oneHourCache) {
-    //   const cache = JSON.parse(cacheJson);
-    //   const threads = cache[0].concat(cache[1]);
-    //   const cards = cache[2];
-    //   res.render('index', {threads: threads, hotCards: cards, username: username});
-    // } else {
+    if (oneHourCache) {
+      const cache = JSON.parse(cacheJson);
+      res.json(cache);
+      res.end();
+    } else {
       Promise.all([CHS.getThreads("hearthstone"), CHS.getThreads("competitivehs"), CHS.getCards("customhearthstone")])
       .then((results) => {
-        const threads = results[0].concat(results[1]);
-        const cards = results[2];
-        console.log(results);
-        res.json(results);
         CHS.writeCache(results);
-        
-        //res.render('index', {threads: threads, hotCards: cards, username: username});
-        
+        res.json(results);
+        res.end();
       })
       .catch((error) => { 
-        console.log('Error occured on /.');
+        console.log('Error occured on /threads.');
         res.end();
       });
-    //}
+    }
   });
 
   app.post('/category', (req, res) => {

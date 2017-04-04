@@ -1,7 +1,7 @@
 const CHS = {
 
   getThreads: () => {
-    fetch('http://localhost:4321/', {
+    fetch('http://localhost:4321/threads', {
        method: 'GET',
        headers: new Headers({ 'Content-Type': 'application/json' }),
     })
@@ -14,17 +14,17 @@ const CHS = {
     const chs = document.getElementById('cards');
     chs.innerHTML = '';
     console.log(array);
-    array.forEach(function(element) {
+    array.forEach(function(card) {
       var blue = $($.parseHTML(
         `<div class='card'>
           <div class='buttons'>
             <i class='fa fa-heart' onclick='CHS.like(event)' aria-hidden='true'></i>
-            <span>${element.score}</span>
+            <span>${card.score}</span>
             <i class='fa fa-times' aria-hidden='true'></i>
           </div> 
-          <a class='results' href='${element.link}'>
-            <img alt='${element.title}' src='${element.image}'/>
-            <p>${element.title}</p>
+          <a class='results' href='${card.link}'>
+            <img alt='${card.title}' src='${card.image}'/>
+            <p>${card.title}</p>
           </a>
         </div>`));
         chs.append(blue);
